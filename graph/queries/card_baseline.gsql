@@ -1,0 +1,42 @@
+// History of one card strictly before t_before: counts, per-key tallies,
+// amount stats and first/last timestamps (as epoch seconds, since MinAccum
+// over DATETIME is avoided). When total == 0 the min/max accumulators hold
+// their type limits and the caller ignores them.
+CREATE OR REPLACE QUERY card_baseline(STRING card_id, STRING t_before) FOR GRAPH FraudGraph {
+  SetAccum<STRING> @@seed_ids;
+  SumAccum<INT> @@total;
+  SumAccum<INT> @@online;
+  MapAccum<STRING, SumAccum<INT>> @@by_addr1;
+  MapAccum<STRING, SumAccum<INT>> @@by_product;
+  MapAccum<STRING, SumAccum<INT>> @@by_device;
+  MapAccum<STRING, SumAccum<INT>> @@by_p_email;
+  MapAccum<STRING, SumAccum<INT>> @@by_r_email;
+  SumAccum<DOUBLE> @@amt_sum;
+  MaxAccum<DOUBLE> @@amt_max;
+  MinAccum<INT> @@first_epoch;
+  MaxAccum<INT> @@last_epoch;
+  DATETIME tb = to_datetime(t_before);
+
+  @@seed_ids += card_id;
+  cards = to_vertex_set(@@seed_ids, "PayCard");
+
+  txns = SELECT t FROM cards:c -(MADE:e)-> Txn:t
+         WHERE t.ts < tb
+         ACCUM @@total += 1,
+               IF t.channel == "online" THEN @@online += 1 END,
+               @@by_addr1 += (t.addr1 -> 1),
+               @@by_product += (t.product -> 1),
+               @@by_device += (t.device_id -> 1),
+               @@by_p_email += (t.p_email -> 1),
+               @@by_r_email += (t.r_email -> 1),
+               @@amt_sum += t.amt,
+               @@amt_max += t.amt,
+               @@first_epoch += datetime_to_epoch(t.ts),
+               @@last_epoch += datetime_to_epoch(t.ts);
+
+  PRINT @@total AS total, @@online AS online, @@by_addr1 AS by_addr1,
+        @@by_product AS by_product, @@by_device AS by_device,
+        @@by_p_email AS by_p_email, @@by_r_email AS by_r_email,
+        @@amt_sum AS amt_sum, @@amt_max AS amt_max,
+        @@first_epoch AS first_epoch, @@last_epoch AS last_epoch;
+}

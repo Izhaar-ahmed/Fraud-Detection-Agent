@@ -1,0 +1,33 @@
+// Closed and investigation cases on (ON_CARD) or connected to (CONNECTED)
+// one card. Embeddings are not printed. @txn_ids lists CC_INVOLVES /
+// IC_INVOLVES transactions.
+CREATE OR REPLACE QUERY card_cases(STRING card_id) FOR GRAPH FraudGraph {
+  SetAccum<STRING> @@seed_ids;
+  SetAccum<STRING> @txn_ids;
+
+  @@seed_ids += card_id;
+  cards = to_vertex_set(@@seed_ids, "PayCard");
+
+  cc_on = SELECT cc FROM cards:c -(CC_ON_CARD:e)-> ClosedCase:cc;
+  cc_conn = SELECT cc FROM cards:c -(CC_CONNECTED:e)-> ClosedCase:cc;
+  ic_on = SELECT ic FROM cards:c -(IC_ON_CARD:e)-> InvestigationCase:ic;
+  ic_conn = SELECT ic FROM cards:c -(IC_CONNECTED:e)-> InvestigationCase:ic;
+
+  cc_all = cc_on UNION cc_conn;
+  ic_all = ic_on UNION ic_conn;
+  cc_tx = SELECT cc FROM cc_all:cc -(CC_INVOLVES:e)-> Txn:t
+          ACCUM cc.@txn_ids += t.id;
+  ic_tx = SELECT ic FROM ic_all:ic -(IC_INVOLVES:e)-> Txn:t
+          ACCUM ic.@txn_ids += t.id;
+
+  PRINT cc_on[cc_on.id, cc_on.customer_id, cc_on.card_id, cc_on.opened_at, cc_on.closed_at,
+              cc_on.outcome, cc_on.pattern, cc_on.first_fraud_txn_id, cc_on.exposure, cc_on.n_txns,
+              cc_on.actions, cc_on.report_filed, cc_on.notes, cc_on.@txn_ids];
+  PRINT cc_conn[cc_conn.id, cc_conn.customer_id, cc_conn.card_id, cc_conn.opened_at, cc_conn.closed_at,
+                cc_conn.outcome, cc_conn.pattern, cc_conn.first_fraud_txn_id, cc_conn.exposure, cc_conn.n_txns,
+                cc_conn.actions, cc_conn.report_filed, cc_conn.notes, cc_conn.@txn_ids];
+  PRINT ic_on[ic_on.id, ic_on.case_ref, ic_on.status, ic_on.verdict, ic_on.probability, ic_on.pattern,
+              ic_on.exposure, ic_on.summary, ic_on.opened_at, ic_on.updated_at, ic_on.record, ic_on.@txn_ids];
+  PRINT ic_conn[ic_conn.id, ic_conn.case_ref, ic_conn.status, ic_conn.verdict, ic_conn.probability, ic_conn.pattern,
+                ic_conn.exposure, ic_conn.summary, ic_conn.opened_at, ic_conn.updated_at, ic_conn.record, ic_conn.@txn_ids];
+}

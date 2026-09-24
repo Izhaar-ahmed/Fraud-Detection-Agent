@@ -1,0 +1,5 @@
+// Installs the FraudGraph queries after each graph/queries/<name>.gsql file
+// has been run (CREATE OR REPLACE QUERY). python -m fraudagent.graph_load
+// queries does both steps.
+USE GRAPH FraudGraph
+INSTALL QUERY card_window, card_baseline, device_neighbors, region_activity, email_neighbors, card_cases, similar_cases, doc_search, embeddings_dump, device_ring, card_community, amount_band_scan

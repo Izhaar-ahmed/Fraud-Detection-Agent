@@ -1,0 +1,16 @@
+// Online transactions on any card with lo <= amt < hi in [t_from, t_to].
+// Used to find the same just-under-threshold shape on other cards (rule R9).
+// Returns one tuple per transaction; epoch is seconds since 1970 (UTC).
+CREATE OR REPLACE QUERY amount_band_scan(STRING t_from, STRING t_to, DOUBLE lo, DOUBLE hi) FOR GRAPH FraudGraph {
+  TYPEDEF TUPLE<STRING txn_id, STRING card_id, INT epoch, DOUBLE amt, STRING device_id, DOUBLE model_p> BandRow;
+  ListAccum<BandRow> @@rows;
+  DATETIME tf = to_datetime(t_from);
+  DATETIME tt = to_datetime(t_to);
+
+  all_txn = {Txn.*};
+  hits = SELECT t FROM all_txn:t
+         WHERE t.channel == "online" AND t.amt >= lo AND t.amt < hi AND t.ts >= tf AND t.ts <= tt
+         ACCUM @@rows += BandRow(t.id, t.card_id, datetime_to_epoch(t.ts), t.amt, t.device_id, t.model_p);
+
+  PRINT @@rows AS rows;
+}

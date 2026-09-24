@@ -1,0 +1,122 @@
+{
+  "case_id": "HHG-003",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.83,
+    "pattern": "out_of_region_use",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3530056",
+      "3530164"
+    ],
+    "first_suspicious_txn_id": "3530056",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 165.93,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.44 (bank risk_score 0.40)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3530164"
+        ]
+      },
+      {
+        "claim": "Cardholder states they did not make the $49.00 purchase",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3530164"
+        ]
+      },
+      {
+        "claim": "5 confirmed and 1 cleared prior cases on this card; last cleared reason: Case CC-1589: model scored a $99.91 transaction at 0.94. Cardholder confirmed travel to the billing region in ",
+        "source": "graph",
+        "ref": "query:card_cases(card_id=C08623-K2)",
+        "entity_ids": [
+          "CC-2935",
+          "CC-3327",
+          "CC-2817",
+          "CC-4957",
+          "CC-3682",
+          "CC-1589"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-1333 (cleared, none); CC-1259 (cleared, none); CC-0905 (cleared, none)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-1333",
+          "CC-1259",
+          "CC-0905"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: R5 card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R5 card testing",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: FinCEN SAR narrative guidance: five Ws and how",
+        "source": "document",
+        "ref": "doc:regulatory_notes.md#FinCEN SAR narrative guidance: five Ws and how",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-4957",
+      "CC-3682",
+      "CC-1589",
+      "CC-1333",
+      "CC-1259",
+      "CC-0905"
+    ],
+    "summary": "Customer C08623 reported an unauthorized $49.00 purchase on card C08623-K2, referencing transaction 3530164, which occurred on December 10, 2016. The fraud model scored this transaction at 0.44. Based on the customer dispute, the investigator recommends blocking the card, pending L1 team lead approval.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-003"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $165.93 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $165.93 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud confirmed but exposure $165.93 is under $1,000 with no shared origin or undocumented pattern, so case only",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "The cardholder's denial settles the verdict under R2 and the graph evidence has been collected; further steps would not change the actions.",
+  "tool_calls": 9,
+  "tokens": 1898,
+  "latency_s": 16.37
+}

@@ -1,0 +1,37 @@
+// Top-k cosine similarity between qvec and DocChunk embeddings. The chunk's
+// source document is stored in the attribute src. k must be >= 1.
+CREATE OR REPLACE QUERY doc_search(LIST<DOUBLE> qvec, INT k) FOR GRAPH FraudGraph {
+  TYPEDEF TUPLE<STRING chunk_id, STRING src, STRING section, STRING text, DOUBLE score> Hit;
+  HeapAccum<Hit>(k, score DESC) @@top;
+  ListAccum<DOUBLE> @@q;
+  SumAccum<DOUBLE> @@q_norm2;
+  SumAccum<DOUBLE> @dot;
+  SumAccum<DOUBLE> @norm2;
+  SumAccum<INT> @dim;
+  DOUBLE q_norm = 0.0;
+
+  FOREACH qx IN qvec DO
+    @@q += qx;
+    @@q_norm2 += qx * qx;
+  END;
+  q_norm = sqrt(@@q_norm2);
+
+  docs = {DocChunk.*};
+  docs = SELECT s FROM docs:s
+         POST-ACCUM
+           INT idx1 = 0,
+           FOREACH ex IN s.embedding DO
+             IF idx1 < @@q.size() THEN
+               s.@dot += ex * @@q.get(idx1)
+             END,
+             s.@norm2 += ex * ex,
+             s.@dim += 1,
+             idx1 = idx1 + 1
+           END;
+  docs = SELECT s FROM docs:s
+         WHERE s.@dim == @@q.size() AND s.@norm2 > 0 AND q_norm > 0
+         POST-ACCUM @@top += Hit(s.id, s.src, s.section, s.text,
+                                 s.@dot / (sqrt(s.@norm2) * q_norm));
+
+  PRINT @@top AS results;
+}

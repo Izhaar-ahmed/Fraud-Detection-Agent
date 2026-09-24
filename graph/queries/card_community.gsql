@@ -1,0 +1,53 @@
+// Bounded ring expansion from one card through shared devices:
+//   PayCard -MADE- Txn -FROM_DEVICE- DeviceProfile -FROM_DEVICE- Txn -MADE- PayCard
+// One round is those four edge hops; max_hops is the number of rounds (the
+// caller clamps it to 1..4). Only transactions with t_from <= ts <= t_to are
+// followed. Devices with more than max_device_txns FROM_DEVICE edges in total
+// are generic hubs: they are listed in skipped_devices and not expanded.
+// links holds "card_id|device_id" pairs for every traversed card-device edge.
+CREATE OR REPLACE QUERY card_community(STRING card_id, STRING t_from, STRING t_to, INT max_hops, INT max_device_txns = 200) FOR GRAPH FraudGraph {
+  SetAccum<STRING> @@seed_ids;
+  OrAccum @visited;
+  MapAccum<STRING, MinAccum<INT>> @@card_hop;
+  MapAccum<STRING, MinAccum<INT>> @@device_hop;
+  SetAccum<STRING> @@links;
+  SetAccum<STRING> @@skipped_devices;
+  DATETIME tf = to_datetime(t_from);
+  DATETIME tt = to_datetime(t_to);
+  INT hop = 0;
+
+  @@seed_ids += card_id;
+  frontier = to_vertex_set(@@seed_ids, "PayCard");
+  frontier = SELECT c FROM frontier:c
+             POST-ACCUM c.@visited += TRUE, @@card_hop += (c.id -> 0);
+
+  WHILE frontier.size() > 0 AND hop < max_hops DO
+    hop = hop + 1;
+
+    txns = SELECT t FROM frontier:c -(MADE:e)-> Txn:t
+           WHERE t.ts >= tf AND t.ts <= tt;
+
+    devs = SELECT d FROM txns:t -(FROM_DEVICE:e)-> DeviceProfile:d
+           WHERE NOT d.@visited
+           ACCUM @@links += (t.card_id + "|" + d.id)
+           POST-ACCUM d.@visited += TRUE;
+
+    hubs = SELECT d FROM devs:d
+           WHERE d.outdegree("FROM_DEVICE") > max_device_txns
+           POST-ACCUM @@skipped_devices += d.id;
+    devs = devs MINUS hubs;
+    devs = SELECT d FROM devs:d
+           POST-ACCUM @@device_hop += (d.id -> hop);
+
+    txns2 = SELECT t FROM devs:d -(FROM_DEVICE:e)-> Txn:t
+            WHERE t.ts >= tf AND t.ts <= tt;
+
+    frontier = SELECT c FROM txns2:t -(MADE:e)-> PayCard:c
+               WHERE NOT c.@visited
+               ACCUM @@links += (c.id + "|" + t.device_id)
+               POST-ACCUM c.@visited += TRUE, @@card_hop += (c.id -> hop);
+  END;
+
+  PRINT @@card_hop AS cards, @@device_hop AS devices, @@links AS links,
+        @@skipped_devices AS skipped_devices, hop AS rounds;
+}

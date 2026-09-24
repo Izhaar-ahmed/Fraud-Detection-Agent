@@ -1,0 +1,11 @@
+// Fallback for similar_cases / doc_search: returns every embedding so the
+// client can compute cosine similarity itself.
+CREATE OR REPLACE QUERY embeddings_dump() FOR GRAPH FraudGraph {
+  cc = {ClosedCase.*};
+  ic = {InvestigationCase.*};
+  docs = {DocChunk.*};
+
+  PRINT cc[cc.id, cc.outcome, cc.pattern, cc.exposure, cc.notes, cc.embedding];
+  PRINT ic[ic.id, ic.verdict, ic.pattern, ic.exposure, ic.summary, ic.embedding];
+  PRINT docs[docs.id, docs.src, docs.section, docs.text, docs.embedding];
+}

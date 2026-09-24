@@ -1,0 +1,562 @@
+{
+  "steps": [
+    {
+      "n": 1,
+      "kind": "trigger",
+      "text": "analyst_request alert on C13487-K1: Analyst request: several cards this month show purchases from the same unusual device profile. Review transaction 3478561 on card C13487-K1 and look for related activity.",
+      "t": 0.0,
+      "tool_calls": 26
+    },
+    {
+      "n": 2,
+      "kind": "case",
+      "text": "Opened case CASE-HHG-014 in the graph (status open)",
+      "t": 0.81,
+      "tool_calls": 27,
+      "status": "open"
+    },
+    {
+      "n": 3,
+      "kind": "gather",
+      "text": "Card history and 72h window around flagged transaction 3478561",
+      "t": 0.81,
+      "tool_calls": 27
+    },
+    {
+      "n": 4,
+      "kind": "gather",
+      "text": "Device profile neighbourhood for DPbd0e6b7c4f over 14 days",
+      "t": 1.84,
+      "tool_calls": 30
+    },
+    {
+      "n": 5,
+      "kind": "signal",
+      "text": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.11 (bank risk_score 0.05)",
+      "t": 2.1,
+      "tool_calls": 31,
+      "signal": "closed_case_model",
+      "fired": true,
+      "strength": 0.0
+    },
+    {
+      "n": 6,
+      "kind": "signal",
+      "text": "Connection behind IP_PROXY:ANONYMOUS",
+      "t": 2.1,
+      "tool_calls": 31,
+      "signal": "proxy",
+      "fired": true,
+      "strength": 0.7
+    },
+    {
+      "n": 7,
+      "kind": "signal",
+      "text": "Device profile 'SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080' used by 24 cards in 14 days; 2 other cards have high-risk transactions on it, 23 behind an anonymising proxy; 47 confirmed closed cases on those cards",
+      "t": 2.1,
+      "tool_calls": 31,
+      "signal": "shared_device",
+      "fired": true,
+      "strength": 2.0
+    },
+    {
+      "n": 8,
+      "kind": "memory",
+      "text": "Retrieved 5 similar cases by vector search and 0 closed cases on this card; 4 policy passages",
+      "t": 2.69,
+      "tool_calls": 33,
+      "similar": [
+        "CC-0590",
+        "CC-5122",
+        "CC-1075",
+        "CC-4283",
+        "CC-0849"
+      ],
+      "docs": [
+        "R10 block all cards",
+        "R6 shared origin",
+        "Pattern 1: card testing",
+        "R5 card testing"
+      ]
+    },
+    {
+      "n": 9,
+      "kind": "assess",
+      "text": "Fraud probability 0.66; independent groups: device, network; leading pattern undocumented",
+      "t": 2.69,
+      "tool_calls": 33,
+      "probability": 0.66
+    },
+    {
+      "n": 10,
+      "kind": "recommend",
+      "text": "Initial next best action: STEP_UP_AUTH (auto), VERIFY_WITH_CUSTOMER (auto), CREATE_CASE (auto), MONITOR_CARD (auto), ESCALATE_TO_ANALYST (auto)",
+      "t": 2.69,
+      "tool_calls": 33,
+      "actions": [
+        {
+          "action": "STEP_UP_AUTH",
+          "route": "auto",
+          "reason": "R1: probability 0.66 < 0.70 with a device signal; confirm the cardholder via OTP before any block"
+        },
+        {
+          "action": "VERIFY_WITH_CUSTOMER",
+          "route": "auto",
+          "reason": "R1: probability 0.66; verify before blocking"
+        },
+        {
+          "action": "CREATE_CASE",
+          "route": "auto",
+          "reason": "3a: probability 0.66 and evidence is being requested"
+        },
+        {
+          "action": "MONITOR_CARD",
+          "route": "auto",
+          "reason": "R1: raise monitoring for 72h while verification is pending"
+        },
+        {
+          "action": "ESCALATE_TO_ANALYST",
+          "route": "auto",
+          "reason": "R8: uncertain verdict with exposure above $500 or conflicting network evidence"
+        }
+      ],
+      "stage": "initial"
+    },
+    {
+      "n": 11,
+      "kind": "request",
+      "text": "Requested step_up_auth; simulated reply: Step-up challenge failed: the one-time passcode was not completed and the cardholder denies the activity",
+      "t": 2.69,
+      "tool_calls": 33,
+      "request": "step_up_auth"
+    },
+    {
+      "n": 12,
+      "kind": "assess",
+      "text": "Probability 0.66 -> 0.92 after the reply",
+      "t": 2.69,
+      "tool_calls": 33,
+      "probability": 0.92
+    },
+    {
+      "n": 13,
+      "kind": "recommend",
+      "text": "Final next best action: BLOCK_CARD (L1), CREATE_CASE (auto), FILE_REPORT (L2), MONITOR_CONNECTED_CARDS (auto), ESCALATE_TO_ANALYST (auto)",
+      "t": 2.69,
+      "tool_calls": 33,
+      "actions": [
+        {
+          "action": "BLOCK_CARD",
+          "route": "L1",
+          "reason": "R2: cardholder denied the transaction; exposure $74.96 <= $2,500 (L1)"
+        },
+        {
+          "action": "CREATE_CASE",
+          "route": "auto",
+          "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+        },
+        {
+          "action": "FILE_REPORT",
+          "route": "L2",
+          "reason": "3a/R2: fraud confirmed and activity connects to a shared device profile or other cards' fraud (R6); pattern is coordinated or undocumented (R9)"
+        },
+        {
+          "action": "MONITOR_CONNECTED_CARDS",
+          "route": "auto",
+          "reason": "R6: 23 other cards share device profile SM-G935F Build/NRD90M | Android 7.0 | chrome 62.0 for android | 1920x1080"
+        },
+        {
+          "action": "ESCALATE_TO_ANALYST",
+          "route": "auto",
+          "reason": "R9: undocumented, coordinated pattern described in the case"
+        }
+      ],
+      "stage": "final"
+    },
+    {
+      "n": 14,
+      "kind": "explain",
+      "text": "LLM synthesised summary and narrative from the evidence packet",
+      "t": 8.8,
+      "tool_calls": 33,
+      "critique": "The bank risk score of 0.05 and model probability of 0.11 initially suggested low risk, but the subsequent customer denial and network analysis clearly confirmed fraudulent intent."
+    },
+    {
+      "n": 15,
+      "kind": "case",
+      "text": "Case CASE-HHG-014 updated in the graph: closed_fraud, fraud, pattern undocumented",
+      "t": 11.05,
+      "tool_calls": 34,
+      "status": "closed_fraud"
+    }
+  ],
+  "tool_trace": [
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-017"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 2183.5,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C04570-K1",
+        "t_from": "2016-11-08 23:46:24",
+        "t_to": "2016-11-14 23:46:24"
+      },
+      "ms": 230.7,
+      "n_results": 3,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C04570-K1",
+        "t_before": "2016-11-11 23:46:24"
+      },
+      "ms": 231.0,
+      "n_results": 52,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C04570-K1"
+      },
+      "ms": 231.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DPcaf8508d25",
+        "t_from": "2016-11-04 23:46:24",
+        "t_to": "2016-11-18 23:46:24"
+      },
+      "ms": 1474.8,
+      "n_results": 130,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 254.7,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 359.6,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-017"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1572.9,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-015"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1225.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C03042-K1",
+        "t_from": "2016-11-14 14:03:36",
+        "t_to": "2016-11-20 14:03:36"
+      },
+      "ms": 411.8,
+      "n_results": 5,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C03042-K1",
+        "t_before": "2016-11-17 14:03:36"
+      },
+      "ms": 406.2,
+      "n_results": 68,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C03042-K1"
+      },
+      "ms": 234.1,
+      "n_results": 3,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DP22e67eb954",
+        "t_from": "2016-11-10 14:03:36",
+        "t_to": "2016-11-24 14:03:36"
+      },
+      "ms": 239.6,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 323.3,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 636.9,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-015"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 6228.2,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-006"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 922.9,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C07297-K1",
+        "t_from": "2016-11-18 20:30:00",
+        "t_to": "2016-11-24 20:30:00"
+      },
+      "ms": 430.9,
+      "n_results": 9,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C07297-K1",
+        "t_before": "2016-11-21 20:30:00"
+      },
+      "ms": 389.9,
+      "n_results": 199,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C07297-K1"
+      },
+      "ms": 243.2,
+      "n_results": 0,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C07297-K1",
+        "t_from": "2016-07-24 20:30:00",
+        "t_to": "2016-11-21 20:29:59"
+      },
+      "ms": 396.5,
+      "n_results": 173,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DP8029c6895e",
+        "t_from": "2016-11-14 20:30:00",
+        "t_to": "2016-11-28 20:30:00"
+      },
+      "ms": 411.6,
+      "n_results": 43,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "amount_band_scan",
+      "params": {
+        "t_from": "2016-11-07 20:30:00",
+        "t_to": "2016-12-05 20:30:00",
+        "lo": 440.0,
+        "hi": 500.0
+      },
+      "ms": 409.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 5338.5,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 477.0,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-006"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1830.2,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-014"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 814.2,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C13487-K1",
+        "t_from": "2016-11-19 16:11:00",
+        "t_to": "2016-11-25 16:11:00"
+      },
+      "ms": 407.2,
+      "n_results": 3,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C13487-K1",
+        "t_before": "2016-11-22 16:11:00"
+      },
+      "ms": 388.4,
+      "n_results": 71,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C13487-K1"
+      },
+      "ms": 233.4,
+      "n_results": 0,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DPbd0e6b7c4f",
+        "t_from": "2016-11-15 16:11:00",
+        "t_to": "2016-11-29 16:11:00"
+      },
+      "ms": 253.6,
+      "n_results": 24,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 357.6,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 234.3,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-014"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 2253.0,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    }
+  ]
+}

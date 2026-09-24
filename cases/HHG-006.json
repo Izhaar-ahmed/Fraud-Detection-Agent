@@ -1,0 +1,222 @@
+{
+  "case_id": "HHG-006",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.98,
+    "pattern": "undocumented",
+    "pattern_description": "A coordinated series of three or more online purchases executed within a single hour, where each transaction amount is intentionally kept just below the $500 authorization threshold to evade standard automated triggers.",
+    "affected_txn_ids": [
+      "3476602",
+      "3476633",
+      "3476665",
+      "3476682"
+    ],
+    "first_suspicious_txn_id": "3476602",
+    "connected_card_ids": [
+      "C00466-K1",
+      "C01890-K1",
+      "C02265-K1",
+      "C03633-K1",
+      "C05423-K1",
+      "C05766-K1",
+      "C05851-K1",
+      "C06881-K1",
+      "C09868-K1",
+      "C10751-K1",
+      "C10990-K1",
+      "C12641-K2",
+      "C12897-K1"
+    ],
+    "connected_device_profiles": [
+      "Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080",
+      "iOS Device | iOS 11.2.1 | mobile safari 11.0 | 2208x1242"
+    ],
+    "exposure_usd": 1906.07,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.13 (bank risk_score 0.25)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3476682"
+        ]
+      },
+      {
+        "claim": "4 online purchases within an hour, each just under $500 ($456.96 to $488.04)",
+        "source": "graph",
+        "ref": "query:card_window(card_id=C07297-K1, +-72h)",
+        "entity_ids": [
+          "3476602",
+          "3476633",
+          "3476665",
+          "3476682"
+        ]
+      },
+      {
+        "claim": "amount $482.12 is 4.1x the card average $116.73",
+        "source": "graph",
+        "ref": "query:card_baseline(card_id=C07297-K1, before=2016-11-21)",
+        "entity_ids": [
+          "3476682"
+        ]
+      },
+      {
+        "claim": "Cardholder states they did not make the $482.12 purchase",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3476682"
+        ]
+      },
+      {
+        "claim": "Device profile 'Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080' used by 43 cards in 14 days; 0 other cards have high-risk transactions on it, 5 behind an anonymising proxy; 198 confirmed closed cases on those cards",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_id=DP8029c6895e, +-7d)",
+        "entity_ids": [
+          "DP8029c6895e"
+        ]
+      },
+      {
+        "claim": "The same shape (3 or more online purchases within an hour just under $500) appears on 13 other cards in the surrounding 4 weeks: 51 transactions, $24,262.56",
+        "source": "graph",
+        "ref": "query:amount_band_scan(lo=440, hi=500, +-14d)",
+        "entity_ids": [
+          "C00466-K1",
+          "C01890-K1",
+          "C02265-K1",
+          "C03633-K1",
+          "C05423-K1",
+          "C05766-K1",
+          "C05851-K1",
+          "C06881-K1",
+          "C09868-K1",
+          "C10751-K1",
+          "C10990-K1",
+          "C12641-K2",
+          "C12897-K1"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-3907 (confirmed_fraud, undocumented); CC-3748 (confirmed_fraud, undocumented); CC-3841 (confirmed_fraud, undocumented)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-3907",
+          "CC-3748",
+          "CC-3841"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: Pattern 2: card-not-present fraud",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#Pattern 2: card-not-present fraud",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: Pattern 1: card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#Pattern 1: card testing",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-3907",
+      "CC-3748",
+      "CC-3841"
+    ],
+    "summary": "Customer C07297 reported a fraudulent online purchase of $482.12 on card C07297-K1, which was part of a burst of four online transactions within an hour ranging from $456.96 to $488.04. The cardholder denied making the transaction, and the exposure totals $1,906.07 across the four unauthorized items. The activity matches an undocumented coordinated fraud pattern identified across multiple other cards.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-006"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $1,906.07 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "3a/R2: fraud confirmed and exposure $1,906.07 exceeds $1,000; activity connects to a shared device profile or other cards' fraud (R6); pattern is coordinated or undocumented (R9)"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: 13 other cards show the same just-under-threshold purchase shape in the same window"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R9: undocumented, coordinated pattern described in the case"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $1,906.07 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "3a/R2: fraud confirmed and exposure $1,906.07 exceeds $1,000; activity connects to a shared device profile or other cards' fraud (R6); pattern is coordinated or undocumented (R9)"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: 13 other cards show the same just-under-threshold purchase shape in the same window"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R9: undocumented, coordinated pattern described in the case"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": true,
+    "reason": "3a/R2: fraud confirmed and exposure $1,906.07 exceeds $1,000; activity connects to a shared device profile or other cards' fraud (R6); pattern is coordinated or undocumented (R9)",
+    "narrative": "On November 21, 2016, customer C07297 contacted the bank to dispute a $482.12 online purchase on card C07297-K1, stating they never made the transaction. Investigation revealed a burst of four online purchases within an hour, each priced just under the $500 authorization threshold. This coordinated activity forms part of an undocumented pattern seen across 13 other cards, totaling 51 transactions and $24,262.56 in exposure. The device profile used in the attack was shared across multiple cards with historical fraud cases. The transactions are highly suspicious because the amounts significantly exceed the cardholder baseline average and occurred in rapid succession. Consequently, the card requires blocking and a suspicious activity report must be filed.",
+    "subjects": [
+      "C07297",
+      "C07297-K1",
+      "C00466-K1",
+      "C01890-K1",
+      "C02265-K1",
+      "C03633-K1",
+      "C05423-K1",
+      "C05766-K1",
+      "C05851-K1",
+      "C06881-K1",
+      "C09868-K1",
+      "C10751-K1",
+      "C10990-K1",
+      "C12641-K2",
+      "C12897-K1",
+      "DP8029c6895e"
+    ],
+    "total_amount_usd": 1906.07,
+    "activity_dates": [
+      "2016-11-21",
+      "2016-11-21"
+    ]
+  },
+  "stop_reason": "The cardholder's denial settles the verdict under R2 and the graph evidence has been collected; further steps would not change the actions.",
+  "tool_calls": 10,
+  "tokens": 3143,
+  "latency_s": 23.86
+}

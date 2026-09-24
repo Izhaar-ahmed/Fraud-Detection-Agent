@@ -1,0 +1,477 @@
+{
+  "steps": [
+    {
+      "n": 1,
+      "kind": "trigger",
+      "text": "customer_report alert on C07297-K1: Customer C07297 message: 'I never made this $482.12 purchase. Please check my card.' Refers to 3476682.",
+      "t": 0.0,
+      "tool_calls": 16
+    },
+    {
+      "n": 2,
+      "kind": "case",
+      "text": "Opened case CASE-HHG-006 in the graph (status open)",
+      "t": 0.92,
+      "tool_calls": 17,
+      "status": "open"
+    },
+    {
+      "n": 3,
+      "kind": "gather",
+      "text": "Card history and 72h window around flagged transaction 3476682",
+      "t": 0.92,
+      "tool_calls": 17
+    },
+    {
+      "n": 4,
+      "kind": "gather",
+      "text": "120-day card history to test for a recurring charge at the disputed amount (R7)",
+      "t": 1.99,
+      "tool_calls": 20
+    },
+    {
+      "n": 5,
+      "kind": "gather",
+      "text": "Device profile neighbourhood for DP8029c6895e over 14 days",
+      "t": 2.38,
+      "tool_calls": 21
+    },
+    {
+      "n": 6,
+      "kind": "gather",
+      "text": "Scanning all cards for online purchases between $440 and $500 within 14 days (R9 ring check)",
+      "t": 2.8,
+      "tool_calls": 22
+    },
+    {
+      "n": 7,
+      "kind": "signal",
+      "text": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.13 (bank risk_score 0.25)",
+      "t": 3.21,
+      "tool_calls": 23,
+      "signal": "closed_case_model",
+      "fired": true,
+      "strength": 0.0
+    },
+    {
+      "n": 8,
+      "kind": "signal",
+      "text": "4 online purchases within an hour, each just under $500 ($456.96 to $488.04)",
+      "t": 3.21,
+      "tool_calls": 23,
+      "signal": "threshold_structuring",
+      "fired": true,
+      "strength": 3.5
+    },
+    {
+      "n": 9,
+      "kind": "signal",
+      "text": "amount $482.12 is 4.1x the card average $116.73",
+      "t": 3.21,
+      "tool_calls": 23,
+      "signal": "amount_product_unusual",
+      "fired": true,
+      "strength": 0.4
+    },
+    {
+      "n": 10,
+      "kind": "signal",
+      "text": "Cardholder states they did not make the $482.12 purchase",
+      "t": 3.21,
+      "tool_calls": 23,
+      "signal": "customer_dispute",
+      "fired": true,
+      "strength": 1.0
+    },
+    {
+      "n": 11,
+      "kind": "signal",
+      "text": "Device profile 'Trident/7.0 | Windows 7 | ie 11.0 for desktop | 1920x1080' used by 43 cards in 14 days; 0 other cards have high-risk transactions on it, 5 behind an anonymising proxy; 198 confirmed closed cases on those cards",
+      "t": 3.21,
+      "tool_calls": 23,
+      "signal": "shared_device",
+      "fired": false,
+      "strength": 0.0
+    },
+    {
+      "n": 12,
+      "kind": "signal",
+      "text": "The same shape (3 or more online purchases within an hour just under $500) appears on 13 other cards in the surrounding 4 weeks: 51 transactions, $24,262.56",
+      "t": 3.21,
+      "tool_calls": 23,
+      "signal": "structuring_ring",
+      "fired": true,
+      "strength": 1.5
+    },
+    {
+      "n": 13,
+      "kind": "memory",
+      "text": "Retrieved 5 similar cases by vector search and 0 closed cases on this card; 4 policy passages",
+      "t": 9.03,
+      "tool_calls": 25,
+      "similar": [
+        "CC-3907",
+        "CC-3748",
+        "CC-3841",
+        "CC-4086",
+        "CC-4124"
+      ],
+      "docs": [
+        "Pattern 2: card-not-present fraud",
+        "Pattern 1: card testing",
+        "R5 card testing",
+        "R7 disputed but legitimate"
+      ]
+    },
+    {
+      "n": 14,
+      "kind": "assess",
+      "text": "Cardholder's denial is direct evidence (R2): probability 0.98 -> 0.98",
+      "t": 9.03,
+      "tool_calls": 25,
+      "probability": 0.98
+    },
+    {
+      "n": 15,
+      "kind": "assess",
+      "text": "Fraud probability 0.98; independent groups: behaviour, customer, network, sequence; leading pattern undocumented",
+      "t": 9.03,
+      "tool_calls": 25,
+      "probability": 0.98
+    },
+    {
+      "n": 16,
+      "kind": "recommend",
+      "text": "Initial next best action: BLOCK_CARD (L1), CREATE_CASE (auto), FILE_REPORT (L2), MONITOR_CONNECTED_CARDS (auto), ESCALATE_TO_ANALYST (auto)",
+      "t": 9.03,
+      "tool_calls": 25,
+      "actions": [
+        {
+          "action": "BLOCK_CARD",
+          "route": "L1",
+          "reason": "R2: cardholder denied the transaction; exposure $1,906.07 <= $2,500 (L1)"
+        },
+        {
+          "action": "CREATE_CASE",
+          "route": "auto",
+          "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+        },
+        {
+          "action": "FILE_REPORT",
+          "route": "L2",
+          "reason": "3a/R2: fraud confirmed and exposure $1,906.07 exceeds $1,000; activity connects to a shared device profile or other cards' fraud (R6); pattern is coordinated or undocumented (R9)"
+        },
+        {
+          "action": "MONITOR_CONNECTED_CARDS",
+          "route": "auto",
+          "reason": "R6: 13 other cards show the same just-under-threshold purchase shape in the same window"
+        },
+        {
+          "action": "ESCALATE_TO_ANALYST",
+          "route": "auto",
+          "reason": "R9: undocumented, coordinated pattern described in the case"
+        }
+      ],
+      "stage": "initial"
+    },
+    {
+      "n": 17,
+      "kind": "explain",
+      "text": "LLM synthesised summary and narrative from the evidence packet",
+      "t": 22.03,
+      "tool_calls": 25,
+      "critique": "The fraud model assigned a low risk score of 0.13 and probability of 0.1348 to the flagged transaction, which heavily conflicted with the actual fraudulent nature of the burst pattern and customer report."
+    },
+    {
+      "n": 18,
+      "kind": "case",
+      "text": "Case CASE-HHG-006 updated in the graph: closed_fraud, fraud, pattern undocumented",
+      "t": 23.86,
+      "tool_calls": 26,
+      "status": "closed_fraud"
+    }
+  ],
+  "tool_trace": [
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-017"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 2183.5,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C04570-K1",
+        "t_from": "2016-11-08 23:46:24",
+        "t_to": "2016-11-14 23:46:24"
+      },
+      "ms": 230.7,
+      "n_results": 3,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C04570-K1",
+        "t_before": "2016-11-11 23:46:24"
+      },
+      "ms": 231.0,
+      "n_results": 52,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C04570-K1"
+      },
+      "ms": 231.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DPcaf8508d25",
+        "t_from": "2016-11-04 23:46:24",
+        "t_to": "2016-11-18 23:46:24"
+      },
+      "ms": 1474.8,
+      "n_results": 130,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 254.7,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 359.6,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-017"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1572.9,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-015"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1225.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C03042-K1",
+        "t_from": "2016-11-14 14:03:36",
+        "t_to": "2016-11-20 14:03:36"
+      },
+      "ms": 411.8,
+      "n_results": 5,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C03042-K1",
+        "t_before": "2016-11-17 14:03:36"
+      },
+      "ms": 406.2,
+      "n_results": 68,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C03042-K1"
+      },
+      "ms": 234.1,
+      "n_results": 3,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DP22e67eb954",
+        "t_from": "2016-11-10 14:03:36",
+        "t_to": "2016-11-24 14:03:36"
+      },
+      "ms": 239.6,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 323.3,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 636.9,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-015"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 6228.2,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-006"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 922.9,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C07297-K1",
+        "t_from": "2016-11-18 20:30:00",
+        "t_to": "2016-11-24 20:30:00"
+      },
+      "ms": 430.9,
+      "n_results": 9,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C07297-K1",
+        "t_before": "2016-11-21 20:30:00"
+      },
+      "ms": 389.9,
+      "n_results": 199,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C07297-K1"
+      },
+      "ms": 243.2,
+      "n_results": 0,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C07297-K1",
+        "t_from": "2016-07-24 20:30:00",
+        "t_to": "2016-11-21 20:29:59"
+      },
+      "ms": 396.5,
+      "n_results": 173,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DP8029c6895e",
+        "t_from": "2016-11-14 20:30:00",
+        "t_to": "2016-11-28 20:30:00"
+      },
+      "ms": 411.6,
+      "n_results": 43,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "amount_band_scan",
+      "params": {
+        "t_from": "2016-11-07 20:30:00",
+        "t_to": "2016-12-05 20:30:00",
+        "lo": 440.0,
+        "hi": 500.0
+      },
+      "ms": 409.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 5338.5,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 477.0,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-006"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1830.2,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    }
+  ]
+}

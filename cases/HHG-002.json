@@ -1,0 +1,114 @@
+{
+  "case_id": "HHG-002",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.88,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3478782"
+    ],
+    "first_suspicious_txn_id": "3478782",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 292.36,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.88 (bank risk_score 0.79)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3478782"
+        ]
+      },
+      {
+        "claim": "amount $292.36 is 6.5x the card average $44.66",
+        "source": "graph",
+        "ref": "query:card_baseline(card_id=C11891-K1, before=2016-11-22)",
+        "entity_ids": [
+          "3478782"
+        ]
+      },
+      {
+        "claim": "1 confirmed and 0 cleared prior cases on this card",
+        "source": "graph",
+        "ref": "query:card_cases(card_id=C11891-K1)",
+        "entity_ids": [
+          "CC-4160"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-3415 (confirmed_fraud, card_not_present_new_device); CC-4891 (confirmed_fraud, card_not_present_new_device); CC-1998 (confirmed_fraud, card_not_present_new_device)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-3415",
+          "CC-4891",
+          "CC-1998"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: Pattern 1: card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#Pattern 1: card testing",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: R5 card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R5 card testing",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-4160",
+      "CC-3415",
+      "CC-4891",
+      "CC-1998"
+    ],
+    "summary": "Transaction 3478782 on card C11891-K1 was flagged by the real-time model with a risk score of 0.79 and evaluated at 0.88 probability of fraud. The online transaction amount of $292.36 is 6.5 times the card average of $44.66. Based on these risk factors and historical case similarities, the recommended action is to block the card, pending L1 (team lead) approval.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-002"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "6 and R1: probability 0.88 >= 0.85 on 2 independent evidence groups (behaviour, model), so no verification is needed before blocking; exposure $292.36 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "6 and R1: probability 0.88 >= 0.85 on 2 independent evidence groups (behaviour, model), so no verification is needed before blocking; exposure $292.36 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud confirmed but exposure $292.36 is under $1,000 with no shared origin or undocumented pattern, so case only",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Probability 0.88 >= 0.85 with 2 independent evidence groups; no evidence request is needed and further steps would not change the decision.",
+  "tool_calls": 7,
+  "tokens": 2191,
+  "latency_s": 8.83
+}

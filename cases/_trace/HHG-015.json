@@ -1,0 +1,367 @@
+{
+  "steps": [
+    {
+      "n": 1,
+      "kind": "trigger",
+      "text": "risk_score alert on C03042-K1: Real-time model scored transaction 3464869 ($599.94, online) at 0.77. Review and decide.",
+      "t": 0.0,
+      "tool_calls": 8
+    },
+    {
+      "n": 2,
+      "kind": "case",
+      "text": "Opened case CASE-HHG-015 in the graph (status open)",
+      "t": 1.23,
+      "tool_calls": 9,
+      "status": "open"
+    },
+    {
+      "n": 3,
+      "kind": "gather",
+      "text": "Card history and 72h window around flagged transaction 3464869",
+      "t": 1.23,
+      "tool_calls": 9
+    },
+    {
+      "n": 4,
+      "kind": "gather",
+      "text": "Device profile neighbourhood for DP22e67eb954 over 14 days",
+      "t": 2.28,
+      "tool_calls": 12
+    },
+    {
+      "n": 5,
+      "kind": "signal",
+      "text": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.01 (bank risk_score 0.77)",
+      "t": 2.52,
+      "tool_calls": 13,
+      "signal": "closed_case_model",
+      "fired": true,
+      "strength": 0.0
+    },
+    {
+      "n": 6,
+      "kind": "signal",
+      "text": "Device Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050 marked New and never seen on this card before",
+      "t": 2.52,
+      "tool_calls": 13,
+      "signal": "new_device",
+      "fired": true,
+      "strength": 0.8
+    },
+    {
+      "n": 7,
+      "kind": "signal",
+      "text": "amount $599.94 is 4.5x the card average $132.61",
+      "t": 2.52,
+      "tool_calls": 13,
+      "signal": "amount_product_unusual",
+      "fired": true,
+      "strength": 0.4
+    },
+    {
+      "n": 8,
+      "kind": "signal",
+      "text": "Device profile 'Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050' used by 1 cards in 14 days; 0 other cards have high-risk transactions on it",
+      "t": 2.52,
+      "tool_calls": 13,
+      "signal": "shared_device",
+      "fired": false,
+      "strength": 0.0
+    },
+    {
+      "n": 9,
+      "kind": "signal",
+      "text": "2 confirmed and 1 cleared prior cases on this card; last cleared reason: Case CC-1313: model scored a $100.08 transaction at 0.87. Cardholder confirmed travel to the billing region in",
+      "t": 2.52,
+      "tool_calls": 13,
+      "signal": "card_case_history",
+      "fired": true,
+      "strength": 0.0
+    },
+    {
+      "n": 10,
+      "kind": "memory",
+      "text": "Retrieved 5 similar cases by vector search and 3 closed cases on this card; 4 policy passages",
+      "t": 3.48,
+      "tool_calls": 15,
+      "similar": [
+        "CC-1030",
+        "CC-0803",
+        "CC-2007",
+        "CC-1025",
+        "CC-1122"
+      ],
+      "docs": [
+        "Pattern 5: account takeover",
+        "R5 card testing",
+        "Pattern 1: card testing",
+        "Pattern 3: card-not-present fraud from a new device"
+      ]
+    },
+    {
+      "n": 11,
+      "kind": "assess",
+      "text": "Fraud probability 0.09; independent groups: model; leading pattern card_not_present_new_device",
+      "t": 3.48,
+      "tool_calls": 15,
+      "probability": 0.09
+    },
+    {
+      "n": 12,
+      "kind": "recommend",
+      "text": "Initial next best action: STEP_UP_AUTH (auto), VERIFY_WITH_CUSTOMER (auto), CREATE_CASE (auto)",
+      "t": 3.48,
+      "tool_calls": 15,
+      "actions": [
+        {
+          "action": "STEP_UP_AUTH",
+          "route": "auto",
+          "reason": "R1: probability 0.09 < 0.70 with a device signal; confirm the cardholder via OTP before any block"
+        },
+        {
+          "action": "VERIFY_WITH_CUSTOMER",
+          "route": "auto",
+          "reason": "R1: probability 0.09; verify before blocking"
+        },
+        {
+          "action": "CREATE_CASE",
+          "route": "auto",
+          "reason": "3a: probability 0.09 and evidence is being requested"
+        }
+      ],
+      "stage": "initial"
+    },
+    {
+      "n": 13,
+      "kind": "request",
+      "text": "Requested step_up_auth; simulated reply: Step-up challenge passed: cardholder completed the one-time passcode and confirms the purchase",
+      "t": 3.48,
+      "tool_calls": 15,
+      "request": "step_up_auth"
+    },
+    {
+      "n": 14,
+      "kind": "assess",
+      "text": "Probability 0.09 -> 0.05 after the reply",
+      "t": 3.48,
+      "tool_calls": 15,
+      "probability": 0.05
+    },
+    {
+      "n": 15,
+      "kind": "recommend",
+      "text": "Final next best action: CREATE_CASE (auto), ALLOW_TRANSACTION (auto), CLOSE_NO_FRAUD (auto)",
+      "t": 3.48,
+      "tool_calls": 15,
+      "actions": [
+        {
+          "action": "CREATE_CASE",
+          "route": "auto",
+          "reason": "3a: a case is opened whenever evidence is requested or a charge is disputed; closed as legitimate"
+        },
+        {
+          "action": "ALLOW_TRANSACTION",
+          "route": "auto",
+          "reason": "R3: confirmed legitimate"
+        },
+        {
+          "action": "CLOSE_NO_FRAUD",
+          "route": "auto",
+          "reason": "R3: cardholder confirmed the transaction; confirmation noted in the case file"
+        }
+      ],
+      "stage": "final"
+    },
+    {
+      "n": 16,
+      "kind": "explain",
+      "text": "LLM synthesised summary and narrative from the evidence packet",
+      "t": 9.02,
+      "tool_calls": 15,
+      "critique": "The fraud model trained on closed cases scores the flagged transaction at 0.01, which contrasts sharply with the bank risk score of 0.77, suggesting the initial high risk score was primarily driven by the new device and elevated amount rather than actual malicious indicators."
+    },
+    {
+      "n": 17,
+      "kind": "case",
+      "text": "Case CASE-HHG-015 updated in the graph: closed_legitimate, legitimate, pattern none",
+      "t": 15.25,
+      "tool_calls": 16,
+      "status": "closed_legitimate"
+    }
+  ],
+  "tool_trace": [
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-017"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 2183.5,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C04570-K1",
+        "t_from": "2016-11-08 23:46:24",
+        "t_to": "2016-11-14 23:46:24"
+      },
+      "ms": 230.7,
+      "n_results": 3,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C04570-K1",
+        "t_before": "2016-11-11 23:46:24"
+      },
+      "ms": 231.0,
+      "n_results": 52,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C04570-K1"
+      },
+      "ms": 231.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DPcaf8508d25",
+        "t_from": "2016-11-04 23:46:24",
+        "t_to": "2016-11-18 23:46:24"
+      },
+      "ms": 1474.8,
+      "n_results": 130,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 254.7,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 359.6,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-017"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1572.9,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-015"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1225.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C03042-K1",
+        "t_from": "2016-11-14 14:03:36",
+        "t_to": "2016-11-20 14:03:36"
+      },
+      "ms": 411.8,
+      "n_results": 5,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C03042-K1",
+        "t_before": "2016-11-17 14:03:36"
+      },
+      "ms": 406.2,
+      "n_results": 68,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C03042-K1"
+      },
+      "ms": 234.1,
+      "n_results": 3,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DP22e67eb954",
+        "t_from": "2016-11-10 14:03:36",
+        "t_to": "2016-11-24 14:03:36"
+      },
+      "ms": 239.6,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 323.3,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 636.9,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-015"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 6228.2,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    }
+  ]
+}

@@ -1,0 +1,811 @@
+{
+  "steps": [
+    {
+      "n": 1,
+      "kind": "trigger",
+      "text": "customer_report alert on C08106-K1: Customer C08106 message: 'I never made this $128.33 purchase. Please check my card.' Refers to 3583227.",
+      "t": 0.0,
+      "tool_calls": 160
+    },
+    {
+      "n": 2,
+      "kind": "case",
+      "text": "Opened case CASE-HHG-004 in the graph (status open)",
+      "t": 1.02,
+      "tool_calls": 161,
+      "status": "open"
+    },
+    {
+      "n": 3,
+      "kind": "gather",
+      "text": "Card history and 72h window around flagged transaction 3583227",
+      "t": 1.02,
+      "tool_calls": 161
+    },
+    {
+      "n": 4,
+      "kind": "gather",
+      "text": "120-day card history to test for a recurring charge at the disputed amount (R7)",
+      "t": 2.04,
+      "tool_calls": 164
+    },
+    {
+      "n": 5,
+      "kind": "gather",
+      "text": "Device profile neighbourhood for DP617014bc7a over 14 days",
+      "t": 3.28,
+      "tool_calls": 165
+    },
+    {
+      "n": 6,
+      "kind": "signal",
+      "text": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.01 (bank risk_score 0.34)",
+      "t": 3.68,
+      "tool_calls": 166,
+      "signal": "closed_case_model",
+      "fired": true,
+      "strength": 0.0
+    },
+    {
+      "n": 7,
+      "kind": "signal",
+      "text": "Device ? | ? | firefox 47.0 | ? marked New and never seen on this card before",
+      "t": 3.68,
+      "tool_calls": 166,
+      "signal": "new_device",
+      "fired": true,
+      "strength": 0.8
+    },
+    {
+      "n": 8,
+      "kind": "signal",
+      "text": "Cardholder states they did not make the $128.33 purchase",
+      "t": 3.68,
+      "tool_calls": 166,
+      "signal": "customer_dispute",
+      "fired": true,
+      "strength": 1.0
+    },
+    {
+      "n": 9,
+      "kind": "signal",
+      "text": "Device profile '? | ? | firefox 47.0 | ?' used by 1 cards in 14 days; 0 other cards have high-risk transactions on it (generic or widely shared profile, so the link is weak)",
+      "t": 3.68,
+      "tool_calls": 166,
+      "signal": "shared_device",
+      "fired": false,
+      "strength": 0.0
+    },
+    {
+      "n": 10,
+      "kind": "signal",
+      "text": "3 confirmed and 1 cleared prior cases on this card; last cleared reason: Case CC-0696: model scored a $13.68 transaction at 0.83. Cardholder confirmed travel to the billing region in ",
+      "t": 3.68,
+      "tool_calls": 166,
+      "signal": "card_case_history",
+      "fired": true,
+      "strength": 0.0
+    },
+    {
+      "n": 11,
+      "kind": "memory",
+      "text": "Retrieved 5 similar cases by vector search and 4 closed cases on this card; 4 policy passages",
+      "t": 4.29,
+      "tool_calls": 168,
+      "similar": [
+        "CC-0696",
+        "CC-2669",
+        "CC-0601",
+        "CC-1039",
+        "CC-2911"
+      ],
+      "docs": [
+        "R5 card testing",
+        "FinCEN SAR narrative guidance: five Ws and how",
+        "R2 customer denies the transaction",
+        "FATF cyber-enabled fraud"
+      ]
+    },
+    {
+      "n": 12,
+      "kind": "assess",
+      "text": "Cardholder's denial is direct evidence (R2): probability 0.16 -> 0.71",
+      "t": 4.29,
+      "tool_calls": 168,
+      "probability": 0.71
+    },
+    {
+      "n": 13,
+      "kind": "assess",
+      "text": "Fraud probability 0.71; independent groups: customer, model; leading pattern card_not_present_new_device",
+      "t": 4.29,
+      "tool_calls": 168,
+      "probability": 0.71
+    },
+    {
+      "n": 14,
+      "kind": "recommend",
+      "text": "Initial next best action: BLOCK_CARD (L1), CREATE_CASE (auto)",
+      "t": 4.29,
+      "tool_calls": 168,
+      "actions": [
+        {
+          "action": "BLOCK_CARD",
+          "route": "L1",
+          "reason": "R2: cardholder denied the transaction; exposure $128.33 <= $2,500 (L1)"
+        },
+        {
+          "action": "CREATE_CASE",
+          "route": "auto",
+          "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+        }
+      ],
+      "stage": "initial"
+    },
+    {
+      "n": 15,
+      "kind": "explain",
+      "text": "LLM synthesised summary and narrative from the evidence packet",
+      "t": 97.89,
+      "tool_calls": 168,
+      "critique": "The very low model score (0.01) and low bank risk score (0.34) conflict with the fraud verdict."
+    },
+    {
+      "n": 16,
+      "kind": "case",
+      "text": "Case CASE-HHG-004 updated in the graph: closed_fraud, fraud, pattern card_not_present_new_device",
+      "t": 99.63,
+      "tool_calls": 169,
+      "status": "closed_fraud"
+    }
+  ],
+  "tool_trace": [
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C08623-K2",
+        "t_before": "2016-12-10 13:01:21"
+      },
+      "ms": 400.2,
+      "n_results": 985,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C08623-K2"
+      },
+      "ms": 409.5,
+      "n_results": 6,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C08623-K2",
+        "t_from": "2016-08-12 13:01:21",
+        "t_to": "2016-12-10 13:01:20"
+      },
+      "ms": 775.3,
+      "n_results": 727,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "region_activity",
+      "params": {
+        "addr1": "330",
+        "t_from": "2016-12-05 13:01:21",
+        "t_to": "2016-12-15 13:01:21",
+        "min_p": 0.5
+      },
+      "ms": 269.8,
+      "n_results": 14,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 383.8,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 412.4,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-003"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1828.8,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-016"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 825.3,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C09988-K1",
+        "t_from": "2016-12-08 22:39:08",
+        "t_to": "2016-12-14 22:39:08"
+      },
+      "ms": 412.2,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C09988-K1",
+        "t_before": "2016-12-11 22:39:08"
+      },
+      "ms": 404.0,
+      "n_results": 48,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C09988-K1"
+      },
+      "ms": 415.6,
+      "n_results": 0,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C09988-K1",
+        "t_from": "2016-08-13 22:39:08",
+        "t_to": "2016-12-11 22:39:07"
+      },
+      "ms": 409.4,
+      "n_results": 41,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DP9231052c98",
+        "t_from": "2016-12-04 22:39:08",
+        "t_to": "2016-12-18 22:39:08"
+      },
+      "ms": 439.4,
+      "n_results": 34,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 382.8,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 251.5,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-016"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1432.4,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-012"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1219.1,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C05876-K2",
+        "t_from": "2016-12-15 04:00:31",
+        "t_to": "2016-12-21 04:00:31"
+      },
+      "ms": 417.2,
+      "n_results": 42,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C05876-K2",
+        "t_before": "2016-12-18 04:00:31"
+      },
+      "ms": 407.0,
+      "n_results": 913,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C05876-K2"
+      },
+      "ms": 405.6,
+      "n_results": 2,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "region_activity",
+      "params": {
+        "addr1": "494",
+        "t_from": "2016-12-13 04:00:31",
+        "t_to": "2016-12-23 04:00:31",
+        "min_p": 0.5
+      },
+      "ms": 409.2,
+      "n_results": 3,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 407.3,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 409.2,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-012"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 2330.4,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-008"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1219.8,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C13171-K2",
+        "t_from": "2016-12-16 22:08:56",
+        "t_to": "2016-12-22 22:08:56"
+      },
+      "ms": 833.8,
+      "n_results": 23,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C13171-K2",
+        "t_before": "2016-12-19 22:08:56"
+      },
+      "ms": 239.2,
+      "n_results": 900,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C13171-K2"
+      },
+      "ms": 241.5,
+      "n_results": 19,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C13171-K2",
+        "t_from": "2016-08-21 22:08:56",
+        "t_to": "2016-12-19 22:08:55"
+      },
+      "ms": 1211.4,
+      "n_results": 641,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DPce8facfb35",
+        "t_from": "2016-12-12 22:08:56",
+        "t_to": "2016-12-26 22:08:56"
+      },
+      "ms": 812.5,
+      "n_results": 126,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 253.9,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 299.2,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-008"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1309.5,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-009"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1139.5,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C08299-K1",
+        "t_from": "2016-12-25 12:10:53",
+        "t_to": "2016-12-31 12:10:53"
+      },
+      "ms": 415.3,
+      "n_results": 5,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C08299-K1",
+        "t_before": "2016-12-28 12:10:53"
+      },
+      "ms": 407.0,
+      "n_results": 46,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C08299-K1"
+      },
+      "ms": 423.9,
+      "n_results": 0,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C08299-K1",
+        "t_from": "2016-08-30 12:10:53",
+        "t_to": "2016-12-28 12:10:52"
+      },
+      "ms": 399.7,
+      "n_results": 22,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DP1e6d8438de",
+        "t_from": "2016-12-21 12:10:53",
+        "t_to": "2017-01-04 12:10:53"
+      },
+      "ms": 692.4,
+      "n_results": 104,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 328.4,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 406.6,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-009"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 2059.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-011"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1031.4,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C11923-K2",
+        "t_from": "2016-12-26 03:27:44",
+        "t_to": "2017-01-01 03:27:44"
+      },
+      "ms": 1255.2,
+      "n_results": 120,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C11923-K2",
+        "t_before": "2016-12-29 03:27:44"
+      },
+      "ms": 392.3,
+      "n_results": 10335,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C11923-K2"
+      },
+      "ms": 401.8,
+      "n_results": 11,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C11923-K2",
+        "t_from": "2016-08-31 03:27:44",
+        "t_to": "2016-12-29 03:27:43"
+      },
+      "ms": 5195.5,
+      "n_results": 6243,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DP27d50b0aab",
+        "t_from": "2016-12-22 03:27:44",
+        "t_to": "2017-01-05 03:27:44"
+      },
+      "ms": 1406.3,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 336.9,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 406.3,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-011"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 2049.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-004"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1015.7,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C08106-K1",
+        "t_from": "2016-12-26 01:53:54",
+        "t_to": "2017-01-01 01:53:54"
+      },
+      "ms": 241.5,
+      "n_results": 8,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_baseline",
+      "params": {
+        "card_id": "C08106-K1",
+        "t_before": "2016-12-29 01:53:54"
+      },
+      "ms": 373.9,
+      "n_results": 209,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_cases",
+      "params": {
+        "card_id": "C08106-K1"
+      },
+      "ms": 409.3,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "card_window",
+      "params": {
+        "card_id": "C08106-K1",
+        "t_from": "2016-08-31 01:53:54",
+        "t_to": "2016-12-29 01:53:53"
+      },
+      "ms": 1234.7,
+      "n_results": 130,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "device_neighbors",
+      "params": {
+        "device_id": "DP617014bc7a",
+        "t_from": "2016-12-22 01:53:54",
+        "t_to": "2017-01-05 01:53:54"
+      },
+      "ms": 403.1,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "similar_cases",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 12,
+        "pattern_filter": ""
+      },
+      "ms": 356.9,
+      "n_results": 12,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "doc_search",
+      "params": {
+        "qvec": "<vector len=256>",
+        "k": 4
+      },
+      "ms": 254.5,
+      "n_results": 4,
+      "backend": "tigergraph-mcp"
+    },
+    {
+      "name": "write_case",
+      "params": {
+        "record": {
+          "case_id": "CASE-HHG-004"
+        },
+        "embedding": "<vector len=256>"
+      },
+      "ms": 1735.0,
+      "n_results": 1,
+      "backend": "tigergraph-mcp"
+    }
+  ]
+}

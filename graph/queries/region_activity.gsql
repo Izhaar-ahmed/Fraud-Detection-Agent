@@ -1,0 +1,32 @@
+// Cards with transactions billed in one BillingRegion (addr1) in
+// [t_from, t_to] whose model_p >= min_p. n_all / n_cards_all count every
+// transaction and card in the region window regardless of min_p.
+CREATE OR REPLACE QUERY region_activity(STRING region, STRING t_from, STRING t_to, DOUBLE min_p) FOR GRAPH FraudGraph {
+  SetAccum<STRING> @@seed_ids;
+  SumAccum<INT> @@n_all;
+  SetAccum<STRING> @@cards_all;
+  SumAccum<INT> @n;
+  SumAccum<DOUBLE> @amt;
+  MaxAccum<DOUBLE> @max_p;
+  SetAccum<STRING> @txn_ids;
+  MinAccum<INT> @first_epoch;
+  MaxAccum<INT> @last_epoch;
+  DATETIME tf = to_datetime(t_from);
+  DATETIME tt = to_datetime(t_to);
+
+  @@seed_ids += region;
+  regs = to_vertex_set(@@seed_ids, "BillingRegion");
+
+  txns = SELECT t FROM regs:r -(BILLED_IN:e)-> Txn:t
+         WHERE t.ts >= tf AND t.ts <= tt
+         ACCUM @@n_all += 1, @@cards_all += t.card_id;
+
+  hot = SELECT t FROM txns:t WHERE t.model_p >= min_p;
+
+  cards = SELECT c FROM hot:t -(MADE:e)-> PayCard:c
+          ACCUM c.@n += 1, c.@amt += t.amt, c.@max_p += t.model_p, c.@txn_ids += t.id,
+                c.@first_epoch += datetime_to_epoch(t.ts), c.@last_epoch += datetime_to_epoch(t.ts);
+
+  PRINT @@n_all AS n_all, @@cards_all.size() AS n_cards_all;
+  PRINT cards;
+}

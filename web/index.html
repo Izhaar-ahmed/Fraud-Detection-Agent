@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Casework</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-name">Casework</span><span class="brand-sub">FraudGraph on TigerGraph</span></div>
+  <div class="top-right"><div class="health" id="health">Connecting</div><a href="#" class="help-link" id="help-link">How to read this</a></div>
+</header>
+<div class="layout">
+  <aside class="queue">
+    <div class="queue-head">
+      <div class="queue-title">Case queue <span id="queue-count" class="muted"></span></div>
+      <div class="filters" id="filters">
+        <button data-f="all" class="on">All</button>
+        <button data-f="fraud">Fraud</button>
+        <button data-f="uncertain">Uncertain</button>
+        <button data-f="legitimate">Legitimate</button>
+      </div>
+    </div>
+    <div class="queue-scroll">
+      <table class="qtable">
+        <thead><tr><th>Case</th><th>Opened</th><th>Trigger</th><th>Card</th><th>Verdict</th><th class="num" title="Fraud probability: how likely the flagged activity is fraud">Fraud prob.</th><th class="num" title="Total dollar amount of the transactions in the fraud episode">Exposure</th></tr></thead>
+        <tbody id="queue-body"></tbody>
+      </table>
+    </div>
+  </aside>
+  <main class="detail" id="detail">
+    <div class="empty">Select a case from the queue.</div>
+  </main>
+</div>
+<script src="help.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

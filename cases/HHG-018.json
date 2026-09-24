@@ -1,0 +1,154 @@
+{
+  "case_id": "HHG-018",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.05,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.50 (bank risk_score 0.48)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3491361"
+        ]
+      },
+      {
+        "claim": "The disputed $39.08 W charge matches the card's own recurring charge: the same amount to the cent appears 19 times in the previous 119 days (2016-07, 2016-08, 2016-09, 2016-10, 2016-11)",
+        "source": "graph",
+        "ref": "query:card_window(card_id=C02354-K2, -120d)",
+        "entity_ids": [
+          "3416607",
+          "3436579",
+          "3449065",
+          "3458446",
+          "3462708",
+          "3482491"
+        ]
+      },
+      {
+        "claim": "Cardholder states they did not make the $39.08 purchase",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3491361"
+        ]
+      },
+      {
+        "claim": "19 confirmed and 1 cleared prior cases on this card; last cleared reason: Case CC-0405: model scored a $22.30 transaction at 0.94. Cardholder confirmed travel to the billing region in ",
+        "source": "graph",
+        "ref": "query:card_cases(card_id=C02354-K2)",
+        "entity_ids": [
+          "CC-4436",
+          "CC-0255",
+          "CC-2432",
+          "CC-5558",
+          "CC-2589",
+          "CC-0405"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-1135 (cleared, none); CC-0471 (cleared, none); CC-1130 (cleared, none); earlier investigations this run: CASE-HHG-004 (fraud, card_not_present_new_device)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-1135",
+          "CC-0471",
+          "CC-1130"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: R7 disputed but legitimate",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R7 disputed but legitimate",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: Pattern 2: card-not-present fraud",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#Pattern 2: card-not-present fraud",
+        "entity_ids": []
+      },
+      {
+        "claim": "Shown the 19 earlier $39.08 charges, the cardholder recognises the recurring merchant and withdraws the dispute",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-5558",
+      "CC-2589",
+      "CC-0405",
+      "CC-1135",
+      "CC-0471",
+      "CC-1130"
+    ],
+    "summary": "Customer C02354 disputed a $39.08 in person purchase on card C02354-K2, claiming they never made the transaction. Investigation revealed that the disputed charge matched the card's own recurring pattern, appearing 19 times in the previous 119 days for the exact same amount. Shown the earlier charges in the assumed reply, the cardholder recognised the recurring merchant and withdrew the dispute. The case is classified as legitimate per policy R7.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-018"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 12,
+      "assumed_response": "Shown the 19 earlier $39.08 charges, the cardholder recognises the recurring merchant and withdraws the dispute"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: confirm the recurring merchant with the cardholder; do not block"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R7 and 3a: disputed charge matches the cardholder's own recurring pattern"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: recurring charge reminder"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: a case is opened whenever evidence is requested or a charge is disputed; closed as legitimate"
+      },
+      {
+        "action": "WARN_CUSTOMER",
+        "route": "auto",
+        "reason": "R7: remind the cardholder of the recurring charge they disputed"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: cardholder confirmed the transaction; confirmation noted in the case file"
+      }
+    ],
+    "what_changed": "The simulated customer_validation reply (confirmed) moved probability to 0.05. Verification replaced by closing the alert as legitimate."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud not confirmed or strongly suspected, so no report; the internal case holds the record",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Verification reply (confirmed) settles the question; further graph steps would not change the actions.",
+  "tool_calls": 9,
+  "tokens": 2283,
+  "latency_s": 31.31
+}

@@ -1,0 +1,130 @@
+{
+  "case_id": "HHG-016",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.98,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3534820"
+    ],
+    "first_suspicious_txn_id": "3534820",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 59.67,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.69 (bank risk_score 0.37)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3534820"
+        ]
+      },
+      {
+        "claim": "Device Windows | ? | edge 16.0 | ? marked New and never seen on this card before",
+        "source": "graph",
+        "ref": "query:card_baseline(card_id=C09988-K1, before=2016-12-11)",
+        "entity_ids": [
+          "DP9231052c98"
+        ]
+      },
+      {
+        "claim": "Cardholder states they did not make the $59.67 purchase",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3534820"
+        ]
+      },
+      {
+        "claim": "Device profile 'Windows | ? | edge 16.0 | ?' used by 34 cards in 14 days; 9 other cards have high-risk transactions on it; 337 confirmed closed cases on those cards (generic or widely shared profile, so the link is weak)",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_id=DP9231052c98, +-7d)",
+        "entity_ids": [
+          "DP9231052c98",
+          "C08374-K1",
+          "C04965-K2",
+          "C07196-K2",
+          "C09616-K1",
+          "C00854-K2",
+          "C09251-K1",
+          "C06224-K2",
+          "C05793-K1",
+          "C03047-K2"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-2971 (confirmed_fraud, undocumented); CC-3035 (confirmed_fraud, undocumented); CC-2649 (confirmed_fraud, undocumented); earlier investigations this run: CASE-HHG-004 (fraud, card_not_present_new_device), CASE-HHG-007 (fraud, account_takeover)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-2971",
+          "CC-3035",
+          "CC-2649"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: FinCEN advisory on account takeover (FIN-2011-A016)",
+        "source": "document",
+        "ref": "doc:regulatory_notes.md#FinCEN advisory on account takeover (FIN-2011-A016)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: R9 undocumented patterns",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R9 undocumented patterns",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2971",
+      "CC-3035",
+      "CC-2649"
+    ],
+    "summary": "Customer C09988 reported an unauthorized online purchase of $59.67 made on December 11, 2016, via card C09988-K1. The transaction originated from a new and previously unseen device profile using Edge 16.0 on Windows. The fraud model assigned a high probability score of 0.692 to the transaction, and the cardholder explicitly denied making the purchase. Consequently, blocking the card with L1 team lead approval is recommended.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-016"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $59.67 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $59.67 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud confirmed but exposure $59.67 is under $1,000 with no shared origin or undocumented pattern, so case only",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "The cardholder's denial settles the verdict under R2 and the graph evidence has been collected; further steps would not change the actions.",
+  "tool_calls": 9,
+  "tokens": 2329,
+  "latency_s": 10.45
+}

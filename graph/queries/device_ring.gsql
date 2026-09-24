@@ -1,0 +1,30 @@
+// DeviceProfiles used by >= min_cards distinct cards in [t_from, t_to].
+// Returns at most 200 devices, largest first. Generic profiles such as
+// "? | ? | ? | ?" are hubs and show up here too; the caller filters by label.
+CREATE OR REPLACE QUERY device_ring(STRING t_from, STRING t_to, INT min_cards) FOR GRAPH FraudGraph {
+  SetAccum<STRING> @cards;
+  SumAccum<INT> @n_txns;
+  SumAccum<DOUBLE> @amt;
+  SumAccum<INT> @n_anon;
+  SumAccum<INT> @n_new;
+  MaxAccum<DOUBLE> @max_p;
+  SumAccum<DOUBLE> @sum_p;
+  DATETIME tf = to_datetime(t_from);
+  DATETIME tt = to_datetime(t_to);
+
+  devs = {DeviceProfile.*};
+  ring = SELECT d FROM devs:d -(FROM_DEVICE:e)-> Txn:t
+         WHERE t.ts >= tf AND t.ts <= tt
+         ACCUM d.@cards += t.card_id,
+               d.@n_txns += 1,
+               d.@amt += t.amt,
+               d.@max_p += t.model_p,
+               d.@sum_p += t.model_p,
+               IF t.ip_proxy == "IP_PROXY:ANONYMOUS" THEN d.@n_anon += 1 END,
+               IF t.device_status == "New" THEN d.@n_new += 1 END
+         HAVING d.@cards.size() >= min_cards
+         ORDER BY d.@n_txns DESC
+         LIMIT 200;
+
+  PRINT ring;
+}

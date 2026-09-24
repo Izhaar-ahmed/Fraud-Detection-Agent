@@ -1,0 +1,131 @@
+{
+  "case_id": "HHG-009",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.98,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3581141"
+    ],
+    "first_suspicious_txn_id": "3581141",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 30.02,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 1.00 (bank risk_score 0.28)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3581141"
+        ]
+      },
+      {
+        "claim": "Cardholder states they did not make the $30.02 purchase",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3581141"
+        ]
+      },
+      {
+        "claim": "Device profile '? | ? | ? | ?' used by 104 cards in 14 days; 18 other cards have high-risk transactions on it; 783 confirmed closed cases on those cards (generic or widely shared profile, so the link is weak)",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_id=DP1e6d8438de, +-7d)",
+        "entity_ids": [
+          "DP1e6d8438de",
+          "C00750-K2",
+          "C06840-K1",
+          "C02716-K2",
+          "C13403-K2",
+          "C10224-K1",
+          "C10308-K1",
+          "C02809-K2",
+          "C06224-K2",
+          "C02662-K1",
+          "C04125-K2",
+          "C05362-K1",
+          "C11792-K1",
+          "C02250-K2",
+          "C11539-K2",
+          "C02222-K1",
+          "C07562-K2",
+          "C08945-K2",
+          "C00854-K2"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-2649 (confirmed_fraud, undocumented); CC-2985 (confirmed_fraud, undocumented); CC-3035 (confirmed_fraud, undocumented); earlier investigations this run: CASE-HHG-007 (fraud, account_takeover), CASE-HHG-004 (fraud, card_not_present_new_device)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-2649",
+          "CC-2985",
+          "CC-3035"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: R9 undocumented patterns",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R9 undocumented patterns",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: Pattern 2: card-not-present fraud",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#Pattern 2: card-not-present fraud",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-2649",
+      "CC-2985",
+      "CC-3035"
+    ],
+    "summary": "Customer C08299 reported an unauthorized online purchase of $30.02 on card C08299-K1 occurring on December 28, 2016. The fraud model assigned a high risk probability of 0.9985 to the flagged transaction 3581141. The investigation classifies the event as card not present fraud and recommends card blocking pending L1 approval.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-009"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $30.02 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $30.02 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud confirmed but exposure $30.02 is under $1,000 with no shared origin or undocumented pattern, so case only",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "The cardholder's denial settles the verdict under R2 and the graph evidence has been collected; further steps would not change the actions.",
+  "tool_calls": 9,
+  "tokens": 2364,
+  "latency_s": 54.99
+}

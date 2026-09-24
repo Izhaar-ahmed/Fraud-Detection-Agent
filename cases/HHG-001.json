@@ -1,0 +1,126 @@
+{
+  "case_id": "HHG-001",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.05,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.45 (bank risk_score 0.61)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3514030"
+        ]
+      },
+      {
+        "claim": "4 confirmed and 0 cleared prior cases on this card",
+        "source": "graph",
+        "ref": "query:card_cases(card_id=C12382-K1)",
+        "entity_ids": [
+          "CC-2964",
+          "CC-1066",
+          "CC-3587",
+          "CC-1673"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-1958 (confirmed_fraud, out_of_region_use); CC-3300 (confirmed_fraud, out_of_region_use); CC-4864 (confirmed_fraud, out_of_region_use); earlier investigations this run: CASE-HHG-004 (fraud, card_not_present_new_device), CASE-HHG-020 (legitimate, none)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-1958",
+          "CC-3300",
+          "CC-4864"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: R5 card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R5 card testing",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: Pattern 1: card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#Pattern 1: card testing",
+        "entity_ids": []
+      },
+      {
+        "claim": "Cardholder confirms the purchase",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1066",
+      "CC-3587",
+      "CC-1673",
+      "CC-1958",
+      "CC-3300",
+      "CC-4864"
+    ],
+    "summary": "Transaction 3514030 for $77.07 was flagged for review after receiving a risk score of 0.61. The card C12382-K1 has four prior confirmed fraud cases, and vector search identified similar cases involving unauthorized out of region use. However, the cardholder confirmed the purchase in the assumed reply. The transaction is therefore considered legitimate and the case is closed.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-001"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 9,
+      "assumed_response": "Cardholder confirms the purchase"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.29; verify before blocking"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: probability 0.29 and evidence is being requested"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: a case is opened whenever evidence is requested or a charge is disputed; closed as legitimate"
+      },
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: confirmed legitimate"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: cardholder confirmed the transaction; confirmation noted in the case file"
+      }
+    ],
+    "what_changed": "The simulated customer_validation reply (confirmed) moved probability to 0.05. Verification replaced by closing the alert as legitimate."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud not confirmed or strongly suspected, so no report; the internal case holds the record",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Verification reply (confirmed) settles the question; further graph steps would not change the actions.",
+  "tool_calls": 8,
+  "tokens": 4138,
+  "latency_s": 17.6
+}

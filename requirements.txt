@@ -1,0 +1,13 @@
+pandas>=2.2
+pyarrow>=15
+numpy>=1.26
+lightgbm>=4.3
+scikit-learn>=1.4
+pyTigerGraph==2.0.4
+tigergraph-mcp==1.0.3
+mcp>=1.0.0
+python-dotenv>=1.0
+httpx>=0.27
+fastapi>=0.110
+uvicorn>=0.29
+pytest>=7

@@ -1,0 +1,17 @@
+// Transactions on one card with t_from <= ts <= t_to, every Txn attribute
+// (device_id is a Txn attribute, so no FROM_DEVICE hop is needed).
+// Datetime params are "YYYY-MM-DD HH:MM:SS" strings.
+CREATE OR REPLACE QUERY card_window(STRING card_id, STRING t_from, STRING t_to) FOR GRAPH FraudGraph {
+  SetAccum<STRING> @@seed_ids;
+  DATETIME tf = to_datetime(t_from);
+  DATETIME tt = to_datetime(t_to);
+
+  @@seed_ids += card_id;
+  cards = to_vertex_set(@@seed_ids, "PayCard");
+
+  txns = SELECT t FROM cards:c -(MADE:e)-> Txn:t
+         WHERE t.ts >= tf AND t.ts <= tt;
+
+  PRINT cards;
+  PRINT txns;
+}

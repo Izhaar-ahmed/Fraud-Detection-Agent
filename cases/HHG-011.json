@@ -1,0 +1,172 @@
+{
+  "case_id": "HHG-011",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.98,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3583368"
+    ],
+    "first_suspicious_txn_id": "3583368",
+    "connected_card_ids": [
+      "C03938-K1",
+      "C05595-K1"
+    ],
+    "connected_device_profiles": [
+      "SM-G610F Build/NRD90M | ? | chrome 66.0 for android | ?"
+    ],
+    "exposure_usd": 131.3,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.34 (bank risk_score 0.39)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3583368"
+        ]
+      },
+      {
+        "claim": "Device SM-G610F Build/NRD90M | ? | chrome 66.0 for android | ? marked New and never seen on this card before",
+        "source": "graph",
+        "ref": "query:card_baseline(card_id=C11923-K2, before=2016-12-29)",
+        "entity_ids": [
+          "DP27d50b0aab"
+        ]
+      },
+      {
+        "claim": "Cardholder states they did not make the $131.30 purchase",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3583368"
+        ]
+      },
+      {
+        "claim": "Device profile 'SM-G610F Build/NRD90M | ? | chrome 66.0 for android | ?' used by 4 cards in 14 days; 2 other cards have high-risk transactions on it; 8 confirmed closed cases on those cards",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_id=DP27d50b0aab, +-7d)",
+        "entity_ids": [
+          "DP27d50b0aab",
+          "C05595-K1",
+          "C03938-K1"
+        ]
+      },
+      {
+        "claim": "10 confirmed and 1 cleared prior cases on this card; last cleared reason: Case CC-4743: model scored a $32.09 transaction at 0.96. Cardholder confirmed the purchase from a new phone. D",
+        "source": "graph",
+        "ref": "query:card_cases(card_id=C11923-K2)",
+        "entity_ids": [
+          "CC-2673",
+          "CC-0290",
+          "CC-3206",
+          "CC-3039",
+          "CC-4743",
+          "CC-0031"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-4743 (cleared, none); CC-1272 (cleared, none); CC-0441 (cleared, none)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-4743",
+          "CC-1272",
+          "CC-0441"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: R5 card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R5 card testing",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: R6 shared origin",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R6 shared origin",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-3039",
+      "CC-4743",
+      "CC-0031",
+      "CC-1272",
+      "CC-0441"
+    ],
+    "summary": "Customer C11923 reported an unauthorized online purchase of $131.30 on card C11923-K2 occurring on December 29, 2016. The transaction originated from a new and previously unseen device profile linked to multiple high-risk cases and connected cards. Recommended actions include blocking the card pending L1 team lead approval and filing a report pending L2 fraud manager approval.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-011"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $131.30 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "3a/R2: fraud confirmed and activity connects to a shared device profile or other cards' fraud (R6)"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: 2 other cards share device profile SM-G610F Build/NRD90M | ? | chrome 66.0 for android | ?"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $131.30 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "3a/R2: fraud confirmed and activity connects to a shared device profile or other cards' fraud (R6)"
+      },
+      {
+        "action": "MONITOR_CONNECTED_CARDS",
+        "route": "auto",
+        "reason": "R6: 2 other cards share device profile SM-G610F Build/NRD90M | ? | chrome 66.0 for android | ?"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": true,
+    "reason": "3a/R2: fraud confirmed and activity connects to a shared device profile or other cards' fraud (R6)",
+    "narrative": "On December 29, 2016, an unauthorized online transaction of $131.30 for product C was executed on card C11923-K2 under a suspicious device profile. Customer C11923 disputed the charge, stating they never made the purchase. The transaction used a new device profile, SM-G610F Build/NRD90M | ? | chrome 66.0 for android | ?, which is shared across multiple cards and associated with prior confirmed fraud cases. This shared device profile indicates a coordinated fraud ring operating across multiple accounts. Because the cardholder confirmed they did not authorize the purchase and the activity ties into a wider device network, a suspicious activity report is required under policy R6. The fraud was carried out online to exploit card not present vulnerabilities without the cardholder's knowledge.",
+    "subjects": [
+      "C11923",
+      "C11923-K2",
+      "C03938-K1",
+      "C05595-K1",
+      "DP27d50b0aab"
+    ],
+    "total_amount_usd": 131.3,
+    "activity_dates": [
+      "2016-12-29",
+      "2016-12-29"
+    ]
+  },
+  "stop_reason": "The cardholder's denial settles the verdict under R2 and the graph evidence has been collected; further steps would not change the actions.",
+  "tool_calls": 9,
+  "tokens": 2537,
+  "latency_s": 50.19
+}

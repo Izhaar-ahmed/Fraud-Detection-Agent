@@ -1,0 +1,59 @@
+// Top-k cosine similarity between qvec and the embeddings of ClosedCase and
+// InvestigationCase vertices. pattern_filter "" matches any pattern.
+// Vertices whose embedding length differs from qvec, or is all zeros, are
+// skipped. For InvestigationCase, outcome is the verdict and notes is the
+// summary. k must be >= 1.
+CREATE OR REPLACE QUERY similar_cases(LIST<DOUBLE> qvec, INT k, STRING pattern_filter) FOR GRAPH FraudGraph {
+  TYPEDEF TUPLE<STRING case_id, STRING kind, STRING outcome, STRING pattern, DOUBLE exposure, STRING notes, DOUBLE score> Hit;
+  HeapAccum<Hit>(k, score DESC) @@top;
+  ListAccum<DOUBLE> @@q;
+  SumAccum<DOUBLE> @@q_norm2;
+  SumAccum<DOUBLE> @dot;
+  SumAccum<DOUBLE> @norm2;
+  SumAccum<INT> @dim;
+  DOUBLE q_norm = 0.0;
+
+  FOREACH qx IN qvec DO
+    @@q += qx;
+    @@q_norm2 += qx * qx;
+  END;
+  q_norm = sqrt(@@q_norm2);
+
+  cc = {ClosedCase.*};
+  cc = SELECT s FROM cc:s
+       WHERE pattern_filter == "" OR s.pattern == pattern_filter
+       POST-ACCUM
+         INT idx1 = 0,
+         FOREACH ex IN s.embedding DO
+           IF idx1 < @@q.size() THEN
+             s.@dot += ex * @@q.get(idx1)
+           END,
+           s.@norm2 += ex * ex,
+           s.@dim += 1,
+           idx1 = idx1 + 1
+         END;
+  cc = SELECT s FROM cc:s
+       WHERE s.@dim == @@q.size() AND s.@norm2 > 0 AND q_norm > 0
+       POST-ACCUM @@top += Hit(s.id, "closed", s.outcome, s.pattern, s.exposure, s.notes,
+                               s.@dot / (sqrt(s.@norm2) * q_norm));
+
+  ic = {InvestigationCase.*};
+  ic = SELECT s FROM ic:s
+       WHERE pattern_filter == "" OR s.pattern == pattern_filter
+       POST-ACCUM
+         INT idx2 = 0,
+         FOREACH ex IN s.embedding DO
+           IF idx2 < @@q.size() THEN
+             s.@dot += ex * @@q.get(idx2)
+           END,
+           s.@norm2 += ex * ex,
+           s.@dim += 1,
+           idx2 = idx2 + 1
+         END;
+  ic = SELECT s FROM ic:s
+       WHERE s.@dim == @@q.size() AND s.@norm2 > 0 AND q_norm > 0
+       POST-ACCUM @@top += Hit(s.id, "investigation", s.verdict, s.pattern, s.exposure, s.summary,
+                               s.@dot / (sqrt(s.@norm2) * q_norm));
+
+  PRINT @@top AS results;
+}

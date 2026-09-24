@@ -1,0 +1,33 @@
+// Cards with transactions whose purchaser or recipient email domain is dom,
+// in [t_from, t_to] and model_p >= min_p. @roles says which side matched.
+CREATE OR REPLACE QUERY email_neighbors(STRING dom, STRING t_from, STRING t_to, DOUBLE min_p) FOR GRAPH FraudGraph {
+  SetAccum<STRING> @@seed_ids;
+  SetAccum<STRING> @role;
+  SumAccum<INT> @n;
+  SumAccum<DOUBLE> @amt;
+  MaxAccum<DOUBLE> @max_p;
+  SetAccum<STRING> @roles;
+  SetAccum<STRING> @txn_ids;
+  MinAccum<INT> @first_epoch;
+  MaxAccum<INT> @last_epoch;
+  DATETIME tf = to_datetime(t_from);
+  DATETIME tt = to_datetime(t_to);
+
+  @@seed_ids += dom;
+  doms = to_vertex_set(@@seed_ids, "EmailDomain");
+
+  tp = SELECT t FROM doms:d -(PURCHASER_EMAIL:e)-> Txn:t
+       WHERE t.ts >= tf AND t.ts <= tt AND t.model_p >= min_p
+       ACCUM t.@role += "purchaser";
+  tr = SELECT t FROM doms:d -(RECIPIENT_EMAIL:e)-> Txn:t
+       WHERE t.ts >= tf AND t.ts <= tt AND t.model_p >= min_p
+       ACCUM t.@role += "recipient";
+  txns = tp UNION tr;
+
+  cards = SELECT c FROM txns:t -(MADE:e)-> PayCard:c
+          ACCUM c.@n += 1, c.@amt += t.amt, c.@max_p += t.model_p,
+                c.@roles += t.@role, c.@txn_ids += t.id,
+                c.@first_epoch += datetime_to_epoch(t.ts), c.@last_epoch += datetime_to_epoch(t.ts);
+
+  PRINT cards;
+}

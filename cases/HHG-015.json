@@ -1,0 +1,154 @@
+{
+  "case_id": "HHG-015",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.05,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 0,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.01 (bank risk_score 0.77)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3464869"
+        ]
+      },
+      {
+        "claim": "Device Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050 marked New and never seen on this card before",
+        "source": "graph",
+        "ref": "query:card_baseline(card_id=C03042-K1, before=2016-11-17)",
+        "entity_ids": [
+          "DP22e67eb954"
+        ]
+      },
+      {
+        "claim": "amount $599.94 is 4.5x the card average $132.61",
+        "source": "graph",
+        "ref": "query:card_baseline(card_id=C03042-K1, before=2016-11-17)",
+        "entity_ids": [
+          "3464869"
+        ]
+      },
+      {
+        "claim": "Device profile 'Trident/7.0 | Windows 8.1 | ie 11.0 for desktop | 1680x1050' used by 1 cards in 14 days; 0 other cards have high-risk transactions on it",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_id=DP22e67eb954, +-7d)",
+        "entity_ids": [
+          "DP22e67eb954"
+        ]
+      },
+      {
+        "claim": "2 confirmed and 1 cleared prior cases on this card; last cleared reason: Case CC-1313: model scored a $100.08 transaction at 0.87. Cardholder confirmed travel to the billing region in",
+        "source": "graph",
+        "ref": "query:card_cases(card_id=C03042-K1)",
+        "entity_ids": [
+          "CC-3886",
+          "CC-1313",
+          "CC-0615"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-1030 (cleared, none); CC-0803 (cleared, none); CC-2007 (cleared, none)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-1030",
+          "CC-0803",
+          "CC-2007"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: Pattern 5: account takeover",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#Pattern 5: account takeover",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: R5 card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R5 card testing",
+        "entity_ids": []
+      },
+      {
+        "claim": "Step-up challenge passed: cardholder completed the one-time passcode and confirms the purchase",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-3886",
+      "CC-1313",
+      "CC-0615",
+      "CC-1030",
+      "CC-0803",
+      "CC-2007"
+    ],
+    "summary": "Transaction 3464869 was flagged by the real-time model with a risk score of 0.77 due to a new device profile and an amount significantly higher than the card average. However, the cardholder successfully completed the assumed step-up challenge via a one-time passcode and confirmed the purchase. Consequently, the alert was determined to be legitimate and closed with no fraud.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-015"
+  },
+  "evidence_requests": [
+    {
+      "type": "step_up_auth",
+      "asked_after_step": 12,
+      "assumed_response": "Step-up challenge passed: cardholder completed the one-time passcode and confirms the purchase"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "STEP_UP_AUTH",
+        "route": "auto",
+        "reason": "R1: probability 0.09 < 0.70 with a device signal; confirm the cardholder via OTP before any block"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.09; verify before blocking"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: probability 0.09 and evidence is being requested"
+      }
+    ],
+    "final": [
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: a case is opened whenever evidence is requested or a charge is disputed; closed as legitimate"
+      },
+      {
+        "action": "ALLOW_TRANSACTION",
+        "route": "auto",
+        "reason": "R3: confirmed legitimate"
+      },
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: cardholder confirmed the transaction; confirmation noted in the case file"
+      }
+    ],
+    "what_changed": "The simulated step_up_auth reply (confirmed) moved probability to 0.05. Verification replaced by closing the alert as legitimate."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud not confirmed or strongly suspected, so no report; the internal case holds the record",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "Verification reply (confirmed) settles the question; further graph steps would not change the actions.",
+  "tool_calls": 8,
+  "tokens": 2258,
+  "latency_s": 15.25
+}

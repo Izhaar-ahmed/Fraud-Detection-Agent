@@ -1,0 +1,165 @@
+{
+  "case_id": "HHG-008",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.98,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3557979",
+      "3557987",
+      "3558054"
+    ],
+    "first_suspicious_txn_id": "3557979",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 166.97,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.99 (bank risk_score 0.38)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3558054"
+        ]
+      },
+      {
+        "claim": "3 online charges within 3 hours at about $55.68",
+        "source": "graph",
+        "ref": "query:card_window(card_id=C13171-K2, +-72h)",
+        "entity_ids": [
+          "3557979",
+          "3557987",
+          "3558054"
+        ]
+      },
+      {
+        "claim": "Cardholder states they did not make the $55.68 purchase",
+        "source": "customer",
+        "ref": "trigger:customer_report",
+        "entity_ids": [
+          "3558054"
+        ]
+      },
+      {
+        "claim": "Device profile '? | ? | chrome 66.0 | ?' used by 126 cards in 14 days; 30 other cards have high-risk transactions on it, 1 behind an anonymising proxy; 862 confirmed closed cases on those cards (generic or widely shared profile, so the link is weak)",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_id=DPce8facfb35, +-7d)",
+        "entity_ids": [
+          "DPce8facfb35",
+          "C10957-K2",
+          "C04034-K2",
+          "C11642-K1",
+          "C06464-K1",
+          "C06630-K2",
+          "C09791-K1",
+          "C08943-K2",
+          "C07562-K2",
+          "C02782-K2",
+          "C11847-K2",
+          "C11807-K1",
+          "C11597-K2",
+          "C11919-K2",
+          "C13407-K1",
+          "C12966-K1",
+          "C02222-K1",
+          "C04597-K2",
+          "C08187-K1",
+          "C10837-K2",
+          "C04680-K1",
+          "C00294-K2",
+          "C08962-K2",
+          "C07686-K1",
+          "C02702-K2"
+        ]
+      },
+      {
+        "claim": "18 confirmed and 1 cleared prior cases on this card; last cleared reason: Case CC-4819: model scored a $66.52 transaction at 0.92. Cardholder confirmed the purchase from a new phone. D",
+        "source": "graph",
+        "ref": "query:card_cases(card_id=C13171-K2)",
+        "entity_ids": [
+          "CC-1925",
+          "CC-3079",
+          "CC-1293",
+          "CC-5010",
+          "CC-3928",
+          "CC-0772"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-5324 (cleared, none); CC-4819 (cleared, none); CC-4697 (cleared, none)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-5324",
+          "CC-4819",
+          "CC-4697"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: Pattern 2: card-not-present fraud",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#Pattern 2: card-not-present fraud",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: R5 card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R5 card testing",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-5010",
+      "CC-3928",
+      "CC-0772",
+      "CC-5324",
+      "CC-4819",
+      "CC-4697"
+    ],
+    "summary": "Customer C13171 reported transaction 3558054 for $55.68 as unauthorized on 2016-12-19. Graph analysis identified a burst of three online transactions totaling $166.97 within a three hour window. The fraud model assigned a high risk score of 0.99 to the activity. A recommendation to block the card is recommended, pending L1 (team lead) approval.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-008"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $166.97 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: cardholder denied the transaction; exposure $166.97 <= $2,500 (L1)"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2 and 3a: fraud case with evidence attached, written to the graph"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud confirmed but exposure $166.97 is under $1,000 with no shared origin or undocumented pattern, so case only",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "The cardholder's denial settles the verdict under R2 and the graph evidence has been collected; further steps would not change the actions.",
+  "tool_calls": 9,
+  "tokens": 3209,
+  "latency_s": 14.2
+}

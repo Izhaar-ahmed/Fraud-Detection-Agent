@@ -1,0 +1,169 @@
+{
+  "case_id": "HHG-010",
+  "case": {
+    "status": "escalated",
+    "verdict": "uncertain",
+    "fraud_probability": 0.43,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3506725"
+    ],
+    "first_suspicious_txn_id": "3506725",
+    "connected_card_ids": [
+      "C02716-K2",
+      "C08989-K2"
+    ],
+    "connected_device_profiles": [
+      "Windows | Windows 10 | edge 16.0 | 1366x768"
+    ],
+    "exposure_usd": 1000.03,
+    "evidence": [
+      {
+        "claim": "Fraud model trained on 5,565 closed cases scores the flagged transaction 0.01 (bank risk_score 0.90)",
+        "source": "graph",
+        "ref": "model:closed_case_lgbm",
+        "entity_ids": [
+          "3506725"
+        ]
+      },
+      {
+        "claim": "Device Windows | Windows 10 | edge 16.0 | 1366x768 marked New and never seen on this card before",
+        "source": "graph",
+        "ref": "query:card_baseline(card_id=C10434-K1, before=2016-12-02)",
+        "entity_ids": [
+          "DPcc94cc7b2d"
+        ]
+      },
+      {
+        "claim": "amount $1000.03 is 7.6x the card average $131.25",
+        "source": "graph",
+        "ref": "query:card_baseline(card_id=C10434-K1, before=2016-12-02)",
+        "entity_ids": [
+          "3506725"
+        ]
+      },
+      {
+        "claim": "Device profile 'Windows | Windows 10 | edge 16.0 | 1366x768' used by 15 cards in 14 days; 2 other cards have high-risk transactions on it; 170 confirmed closed cases on those cards",
+        "source": "graph",
+        "ref": "query:device_neighbors(device_id=DPcc94cc7b2d, +-7d)",
+        "entity_ids": [
+          "DPcc94cc7b2d",
+          "C02716-K2",
+          "C08989-K2"
+        ]
+      },
+      {
+        "claim": "0 confirmed and 1 cleared prior cases on this card; last cleared reason: Case CC-0873: model scored a $50.05 transaction at 0.93. Cardholder confirmed travel to the billing region in ",
+        "source": "graph",
+        "ref": "query:card_cases(card_id=C10434-K1)",
+        "entity_ids": [
+          "CC-0873"
+        ]
+      },
+      {
+        "claim": "Most similar closed cases by vector search: CC-3695 (confirmed_fraud, card_not_present_new_device); CC-5447 (confirmed_fraud, card_not_present_new_device); CC-0660 (confirmed_fraud, card_not_present_new_device)",
+        "source": "graph",
+        "ref": "query:similar_cases(k=12)",
+        "entity_ids": [
+          "CC-3695",
+          "CC-5447",
+          "CC-0660"
+        ]
+      },
+      {
+        "claim": "Policy retrieved: Pattern 1: card testing",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#Pattern 1: card testing",
+        "entity_ids": []
+      },
+      {
+        "claim": "Policy retrieved: R10 block all cards",
+        "source": "document",
+        "ref": "doc:policy_and_patterns.md#R10 block all cards",
+        "entity_ids": []
+      },
+      {
+        "claim": "No reply within 24 hours; the one-time passcode was never entered",
+        "source": "customer",
+        "ref": "evidence_request:1",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-0873",
+      "CC-3695",
+      "CC-5447",
+      "CC-0660"
+    ],
+    "summary": "Transaction 3506725 on card C10434-K1 was flagged by the real-time risk model with a score of 0.90 due to an online amount of $1,000.03 that is 7.6x the card average, originating from a new device profile. A step-up authentication attempt received no reply within 24 hours, and the one-time passcode was never entered. Consequently, the transaction decline is recommended, pending L1 (team lead) approval.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-HHG-010"
+  },
+  "evidence_requests": [
+    {
+      "type": "step_up_auth",
+      "asked_after_step": 11,
+      "assumed_response": "No reply within 24 hours; the one-time passcode was never entered"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "STEP_UP_AUTH",
+        "route": "auto",
+        "reason": "R1: probability 0.43 < 0.70 with a device signal; confirm the cardholder via OTP before any block"
+      },
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: probability 0.43; verify before blocking"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: probability 0.43 and evidence is being requested"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R8: uncertain verdict with exposure above $500 or conflicting network evidence"
+      }
+    ],
+    "final": [
+      {
+        "action": "DECLINE_TRANSACTION",
+        "route": "L1",
+        "reason": "R4: decline pending authorizations while unverified"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "3a: evidence was requested; case stays open"
+      },
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "R4: no reply within 24 hours; raise monitoring for 72h"
+      },
+      {
+        "action": "ESCALATE_TO_ANALYST",
+        "route": "auto",
+        "reason": "R4 and R8: no reply, uncertain verdict, exposure above $500 or conflicting network evidence"
+      }
+    ],
+    "what_changed": "The simulated step_up_auth reply (no_reply) moved probability to 0.43. Verification replaced by closing the alert as legitimate."
+  },
+  "sar": {
+    "file": false,
+    "reason": "3a: fraud not confirmed or strongly suspected, so no report; the internal case holds the record",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0,
+    "activity_dates": []
+  },
+  "stop_reason": "No reply within 24 hours (R4): card monitored, pending authorizations declined, case escalated; the verdict stays uncertain.",
+  "tool_calls": 8,
+  "tokens": 2765,
+  "latency_s": 18.23
+}

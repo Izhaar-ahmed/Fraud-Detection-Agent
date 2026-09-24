@@ -1,0 +1,66 @@
+// FraudGraph schema (TigerGraph 4.x, Savanna).
+// 
+// All vertex and edge types are LOCAL to FraudGraph. The global schema on the
+// shared workspace already defines Phone, Email, Community, Address, IP and
+// similar names, so every type here uses a distinct name.
+// 
+// Denormalised attributes: Txn carries card_id, customer_id and device_id as
+// plain STRING attributes next to the MADE / FROM_DEVICE edges. Queries use
+// them to group per card or per device without a second hop.
+// 
+// Missing values are loaded as "" for STRING, 0 for numbers and
+// 1970-01-01 00:00:00 for DATETIME.
+// 
+// Run with: python -m fraudagent.graph_load schema
+
+CREATE GRAPH FraudGraph()
+
+USE GRAPH FraudGraph
+
+CREATE SCHEMA_CHANGE JOB fraud_schema FOR GRAPH FraudGraph {
+  ADD VERTEX Customer (PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+
+  ADD VERTEX PayCard (PRIMARY_ID id STRING, customer_id STRING, network STRING, card_type STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+
+  ADD VERTEX Txn (PRIMARY_ID id STRING, ts DATETIME, amt DOUBLE, product STRING, channel STRING,
+                  addr1 STRING, p_email STRING, r_email STRING, risk_score DOUBLE, model_p DOUBLE,
+                  device_status STRING, ip_proxy STRING, m4 STRING, device_profile STRING, device_type STRING,
+                  dist1 DOUBLE, card_id STRING, customer_id STRING, device_id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+
+  ADD VERTEX DeviceProfile (PRIMARY_ID id STRING, label STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+
+  ADD VERTEX EmailDomain (PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+
+  ADD VERTEX BillingRegion (PRIMARY_ID id STRING) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+
+  ADD VERTEX ClosedCase (PRIMARY_ID id STRING, customer_id STRING, card_id STRING, opened_at DATETIME,
+                         closed_at DATETIME, outcome STRING, pattern STRING, first_fraud_txn_id STRING,
+                         exposure DOUBLE, n_txns INT, actions STRING, report_filed BOOL, notes STRING,
+                         embedding LIST<DOUBLE>) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+
+  ADD VERTEX InvestigationCase (PRIMARY_ID id STRING, case_ref STRING, status STRING, verdict STRING,
+                                probability DOUBLE, pattern STRING, exposure DOUBLE, summary STRING,
+                                opened_at DATETIME, updated_at DATETIME, record STRING,
+                                embedding LIST<DOUBLE>) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+
+  ADD VERTEX DocChunk (PRIMARY_ID id STRING, src STRING, section STRING, text STRING,
+                       embedding LIST<DOUBLE>) WITH PRIMARY_ID_AS_ATTRIBUTE="true";
+
+  ADD UNDIRECTED EDGE HAS_CARD (FROM Customer, TO PayCard);
+  ADD UNDIRECTED EDGE MADE (FROM PayCard, TO Txn);
+  ADD UNDIRECTED EDGE FROM_DEVICE (FROM Txn, TO DeviceProfile);
+  ADD UNDIRECTED EDGE PURCHASER_EMAIL (FROM Txn, TO EmailDomain);
+  ADD UNDIRECTED EDGE RECIPIENT_EMAIL (FROM Txn, TO EmailDomain);
+  ADD UNDIRECTED EDGE BILLED_IN (FROM Txn, TO BillingRegion);
+  ADD UNDIRECTED EDGE CC_INVOLVES (FROM ClosedCase, TO Txn);
+  ADD UNDIRECTED EDGE CC_ON_CARD (FROM ClosedCase, TO PayCard);
+  ADD UNDIRECTED EDGE CC_CONNECTED (FROM ClosedCase, TO PayCard);
+  ADD UNDIRECTED EDGE IC_INVOLVES (FROM InvestigationCase, TO Txn);
+  ADD UNDIRECTED EDGE IC_ON_CARD (FROM InvestigationCase, TO PayCard);
+  ADD UNDIRECTED EDGE IC_CONNECTED (FROM InvestigationCase, TO PayCard);
+  ADD UNDIRECTED EDGE IC_DEVICE (FROM InvestigationCase, TO DeviceProfile);
+  ADD UNDIRECTED EDGE IC_SIMILAR (FROM InvestigationCase, TO ClosedCase, score DOUBLE);
+  ADD DIRECTED EDGE NEXT (FROM Txn, TO Txn, gap_s DOUBLE);
+}
+
+RUN SCHEMA_CHANGE JOB fraud_schema
